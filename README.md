@@ -13,6 +13,8 @@ Potential duplicate rows: ~4,353 (still investigating)
 
 Variables:
 
+
+
 |variable      | n_missing| perc_missing|
 |:-------------|---------:|------------:|
 |LoanRange     |   4224170|         86.5|
@@ -32,3 +34,6 @@ Variables:
 |Lender        |         0|          0.0|
 |CD            |         0|          0.0|
 |LoanAmount    |    661218|         13.5|
+
+Notes: LoanRange is missing from all state data, giving the 86.5% missing number, but actual loan amount is included instead.
+RaceEthnicity, Gender, and Veteran do not indicate missing data, but most of the data in those fields are "Not Answered" due to these questions being optional.

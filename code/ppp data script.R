@@ -11,14 +11,12 @@ rm(list=ls()) # clean up workspace before beginning
 # load all needed libraries upfront
 library("tidyverse") # used for merging the various CSV files and manipulating the data
 
-#TODO: set your local working directory (until we get a shared location)
-# setwd("C:/Users/John/Dropbox/CARES Act/PPP/")
-
-
 # Read --------------------------------------------------------------------
 
 # ideally we will use standardized directory structure atop the working directory, specified here for All Data by State, a direct extract of the SBA data zip files
-reldir <- "data/All Data by State/All Data by State"
+reldir <- "../data/All Data by State/All Data by State"
+
+#reldir<-"C:/Users/rcarder/Documents/dev/All Data by State/All Data by State"
 
 dat_files <- list.files(reldir, full.names = T, recursive = T, pattern = ".*.csv") # scan through all directories and subdirectories for all CSVs
 
@@ -29,37 +27,9 @@ all_data_by_state <- map_df(dat_files, ~read_csv(.x, col_types = cols(.default =
                            )
 adbs <- all_data_by_state
 
+?map_df
 
 # Clean -------------------------------------------------------------------
-
-### Data Check: ZipCodes ###
-
-# generate table to check lengths and also run a simple grep ZIP validator
-table(grepl("\\d{5}([ \\-]\\d{4})?", adbs$Zip), nchar(adbs$Zip),useNA = "always", dnn = c("Passes Simple ZIP Validation","Number of Characters"))
-
-# OUTPUT:
-#                             Number of Characters
-# Passes Simple ZIP Validation        5    <NA>
-#                         FALSE       0     224
-#                         TRUE  4885164       0
-#                         <NA>        0       0
-#                        
-# result indicates that all present values are of valid length as simple 5 digit zips, however 224 are missing entirely and are recorded in original data as NAs
-# let's code this into a new variable, so that we can later evaluate each row for validation along various checks
-adbs <- adbs %>% 
-             mutate(Zip_Valid_Format = case_when(grepl("\\d{5}", Zip)        ~ "Pass: 5 Digit Format",
-                                                 grepl("\\d{5}-\\d{4}", Zip) ~ "Pass: 5dash4 Digit Format ",
-                                                 TRUE ~ "Fail"))
-             
-                        
-                        
-# next let's use a table to determine if the zips codes are 'real' rather than just 'valid', and if they map to the specified states recorded in row or source csv name
-
-
-# confirm all Jobs Retained values are integers (whole numbers) or NAs
-summary(near(as.numeric(adbs$JobsRetained), as.integer(as.numeric(adbs$JobsRetained))))
-
-
 
 
 ### Create unified Loan Amount / Loan Range cuts
@@ -101,7 +71,7 @@ adbs <- adbs %>%
                                           TRUE ~ "Unknown"))   
 
 
-# Florida Subset ----------------------------------------------------------
+# Example of State Specific (Florida) Subset ------------------------------
 
 # adbs_fl <- adbs[adbs$State=="FL",]
 # 

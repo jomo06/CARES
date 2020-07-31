@@ -1,1 +1,5 @@
 All Data by State.zip: accessed 642pm BST, July 22nd 2020 from: https://sba.app.box.com/s/tvb0v5i57oa8gc6b5dcm9cyw7y2ms6pp
+
+NAICS Codes are from the Census: https://www.census.gov/eos/www/naics/downloadables/downloadables.html
+
+Demographics data pulled from the ACS using tidycensus R package: https://github.com/walkerke/tidycensus. Estimates used are 2014-2018 5 year estimates, with the exception of language data at all geographies except the state level, which is from 2011-2015 5 year ACS estimates.
