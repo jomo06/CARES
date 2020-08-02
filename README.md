@@ -2,7 +2,7 @@
 
 CARES Act data: PPP, EIDL and more.
 
-Data downloaded from the [Small Business Administration's DropBox](https://sba.app.box.com/s/tvb0v5i57oa8gc6b5dcm9cyw7y2ms6pp)
+Data files can be downloaded from the [DataKind Google Drive](https://drive.google.com/drive/folders/1oGw8sobXw4PC_SNQ9AcfCuR8RBu-te2o?usp=sharing)
 
 ## Data Sources
 

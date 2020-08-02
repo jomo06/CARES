@@ -35,14 +35,20 @@ bad_naics = tibble(NAICSCode = naics_fails,
 
 naics_df = naics_df %>% 
   mutate(naics_valid = T) %>% 
-  bind_rows(naics_df, bad_naics)
+  bind_rows(bad_naics)
 
 # Join --------------------------------------------------------------------
 
 adbs = adbs %>% 
   left_join(naics_df)
 
+
+# Write -------------------------------------------------------------------
+
+write_csv(adbs,
+          "data/tidy_data/adbs_naics.csv")
+
 # Cleanup -----------------------------------------------------------------
 
-rm(bad_naics, naics_2L)
+rm(bad_naics, naics_2L, naics_fails)
 
