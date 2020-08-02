@@ -75,7 +75,7 @@ adbscities$match_10 <- citydict[citymatch_10]
 #confirm all Jobs Retained values are integers (whole numbers) or NAs
 summary(near(as.numeric(adbs$JobsRetained), as.integer(as.numeric(adbs$JobsRetained))))
 
-# Further clean -----------------------------------------------------------
+# Coerce -------------------------------------------------------------------
 
 ### Coersions
 adbs = adbs %>% 
@@ -84,6 +84,9 @@ adbs = adbs %>%
                                  "%m/%d/%Y"),
          LoanAmount = as.numeric(LoanAmount))
 
+
+# Duplicates --------------------------------------------------------------
+
 ### Duplicates
 
 ## Takes a long time! Be patient.
@@ -91,48 +94,4 @@ adbs = adbs %>%
 # sum(duplicated(adbs))
 # 4353 exact duplicates
 
-adbs_dupes=adbs[duplicated(adbs),]
-
-View(adbs_dupes)
-
-# Check for missingness ---------------------------------------------------
-
-## Missingness summary table
-adbs %>% 
-  select(-source_file,
-         -Zip_Valid_Format,
-         -LoanRange_Unified,
-         -JobsRetained_Grouped) %>% 
-  mutate_all(is.na) %>% 
-  summarise_all(~sum(.)) %>% 
-  gather("variable", "n_missing") %>% 
-  mutate(perc_missing = round(n_missing / nrow(adbs) * 100, 1)) %>% 
-  kable()
-
-# EDA ---------------------------------------------------------------------
-
-## Loan Amount
-
-range(adbs$LoanAmount[!is.na(adbs$LoanAmount)])
-# Negative values?
-
-# 46 with negative values
-adbs %>% 
-  filter(LoanAmount <= 0) %>% 
-  summarise(n = n())
-
-adbs %>% 
-  filter(LoanAmount > 0) %>% 
-  ggplot(aes(x = LoanAmount)) +
-  geom_histogram()
-
-## State
-adbs %>% 
-  count(State) %>% 
-  arrange(desc(n)) %>% 
-  filter(row_number()<=10) %>% 
-  ggplot(aes(x = reorder(State,n),
-             y = n)) +
-  geom_col()
-
-
+# adbs_dupes=adbs[duplicated(adbs),]

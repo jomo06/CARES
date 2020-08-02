@@ -6,7 +6,7 @@
 
 # Setup -------------------------------------------------------------------
 
-rm(list=ls()) # clean up workspace before beginning
+# rm(list=ls()) # clean up workspace before beginning
 
 # load all needed libraries upfront
 library("tidyverse") # used for merging the various CSV files and manipulating the data
@@ -14,7 +14,7 @@ library("tidyverse") # used for merging the various CSV files and manipulating t
 # Read --------------------------------------------------------------------
 
 # ideally we will use standardized directory structure atop the working directory, specified here for All Data by State, a direct extract of the SBA data zip files
-reldir <- "../data/All Data by State/All Data by State"
+reldir <- "data/All Data By State/"
 
 #reldir<-"C:/Users/rcarder/Documents/dev/All Data by State/All Data by State"
 
@@ -22,12 +22,9 @@ dat_files <- list.files(reldir, full.names = T, recursive = T, pattern = ".*.csv
 
 # read in each CSV, all as character values, to allow for a clean import with no initial manipulation
 # for each file, attached the name of the data source file
-all_data_by_state <- map_df(dat_files, ~read_csv(.x, col_types = cols(.default = "c")) %>%
+adbs <- map_df(dat_files, ~read_csv(.x, col_types = cols(.default = "c")) %>%
                               mutate(source_file = str_remove_all(.x, "data/20200722/All Data by State/All Data by State/"))
                            )
-adbs <- all_data_by_state
-
-?map_df
 
 # Clean -------------------------------------------------------------------
 
@@ -82,5 +79,4 @@ adbs <- adbs %>%
 # Cleanup -----------------------------------------------------------------
 
 rm(dat_files, 
-   all_data_by_state,
    reldir)

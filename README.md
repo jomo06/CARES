@@ -4,16 +4,20 @@ CARES Act data: PPP, EIDL and more.
 
 Data downloaded from the [Small Business Administration's DropBox](https://sba.app.box.com/s/tvb0v5i57oa8gc6b5dcm9cyw7y2ms6pp)
 
+## Data Sources
+
+- PPP Loan Data: [Small Business Administration's DropBox](https://sba.app.box.com/s/tvb0v5i57oa8gc6b5dcm9cyw7y2ms6pp)
+- NAICS code dictionary [US Census NAICS Files](https://www.census.gov/eos/www/naics/downloadables/downloadables.html)
+
 ## PPP Data Dictionary
 
 ### Structure
 
 Rows: 4,885,388
+
 Potential duplicate rows: ~4,353 (still investigating)
 
 Variables:
-
-
 
 |variable      | n_missing| perc_missing|
 |:-------------|---------:|------------:|
@@ -35,5 +39,13 @@ Variables:
 |CD            |         0|          0.0|
 |LoanAmount    |    661218|         13.5|
 
-Notes: LoanRange is missing from all state data, giving the 86.5% missing number, but actual loan amount is included instead.
-RaceEthnicity, Gender, and Veteran do not indicate missing data, but most of the data in those fields are "Not Answered" due to these questions being optional.
+#### Notes
+
+`LoanRange` is missing from all state data, giving the 86.5% missing 
+number, but actual loan amount is included instead.
+
+For `RaceEthnicity`, `Gender`, and `Veteran`, most of the data are 
+"Not Answered" due to these questions being optional.
+
+### NAICS Code Industry
+
