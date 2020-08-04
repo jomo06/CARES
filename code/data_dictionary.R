@@ -17,6 +17,12 @@ library(stringdist) # for fuzzy matching
 
 glimpse(adbs)
 
+# Data Check: LoanRange_Unified -------------------------------------------
+
+# evaluate how many Loan Range values are sensible
+table(adbs$LoanRange_Unified, useNA="always")
+
+
 # Data Check: ZipCodes ----------------------------------------------------
 
 # generate table to check lengths and also run a simple grep ZIP validator
@@ -83,6 +89,10 @@ adbs = adbs %>%
          DateApproved = as.Date(DateApproved,
                                  "%m/%d/%Y"),
          LoanAmount = as.numeric(LoanAmount))
+
+
+# Data Check: Date Approved  ------------------------------------------------
+table(adbs$DateApproved, useNA="always")
 
 
 # Duplicates --------------------------------------------------------------
