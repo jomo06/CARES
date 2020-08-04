@@ -58,26 +58,33 @@ Additionally we have created numeric fields for other calcuations, such
 as ranking and summing across groups: `LoanRangeMin`, `LoanRangeMid`, 
 `LoanRangeMax`.
 
+
 `City` is not a formalized field and contains open-text values, meaning it 
 cannot be used as-is for any kind of geo-coding or validation
 
+
 `State` contains a small number of odd values: 
+
 |State |    n |  % |
-|:------------|---:| 
+|:-----|-----:|---:| 
 |AE    |     1| 0.0| zip cross-check suggests this is indeed a  military address outside the US
 |FI    |     1| 0.0| zip cross-check suggests this should be FL
 |XX    |   210| 0.0|
+
 
 `Zip`: all non-missing values are in valid 5 digit format, but not all 
 of those match to real zip codes. Further validation pending. Note also 
 that just because a zip code is valid does not mean it can be mapped to 
 a ZCAT (e.g., PO Box Zips)
 
+
 For `RaceEthnicity`, `Gender`, and `Veteran`, most of the data are 
 "Not Answered" due to these questions being optional.
 
+
 `NonProfit` has only Y or NA values, and so can be assumed to be a required
 question, implying actual Missingness of 0%
+
 
 `JobsRetained` contains some improbable values, and many values are Zero:
 
