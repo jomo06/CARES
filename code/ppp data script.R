@@ -13,8 +13,8 @@ library("tidyverse") # used for merging the various CSV files and manipulating t
 
 # Read --------------------------------------------------------------------
 
-# ideally we will use standardized directory structure atop the working directory, specified here for All Data by State, a direct extract of the SBA data zip files
-reldir <- "data/All Data By State/"
+# the below code will work if your current working directory is CARES/code/
+reldir <- "../data/All Data By State/"
 
 #reldir<-"C:/Users/rcarder/Documents/dev/All Data by State/All Data by State"
 
