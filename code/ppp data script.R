@@ -14,7 +14,7 @@ library("tidyverse") # used for merging the various CSV files and manipulating t
 # Read --------------------------------------------------------------------
 
 # the below code will work if your current working directory is CARES/code/
-reldir <- "../data/All Data By State/"
+reldir <- "data/All Data By State/"
 
 #reldir<-"C:/Users/rcarder/Documents/dev/All Data by State/All Data by State"
 
