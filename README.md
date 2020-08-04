@@ -19,25 +19,25 @@ Potential duplicate rows: ~4,353 (still investigating)
 
 Variables:
 
-|variable      | n_missing| perc_missing|                        validation notes |
-|:-------------|---------:|------------:|----------------------------------------:|
-|LoanRange     |   4224170|         86.5| see notes                               |
-|BusinessName  |   4224171|         86.5| no values for loan amounts under 150K   |
-|Address       |   4224170|         86.5| no values for loan amounts under 150K   |
-|City          |         1|          0.0| see notes                               |
-|State         |         0|          0.0| see notes                               |
-|Zip           |       224|          0.0| see notes                               |
-|NAICSCode     |    133527|          2.7| validation pending                      |
-|BusinessType  |      4723|          0.1|                                         |
-|RaceEthnicity |         0|          0.0| 89.3% "Unanswered"                      |
-|Gender        |         0|          0.0| 77.7% "Unanswered"                      |
-|Veteran       |         0|          0.0| 84.7% "Unanswered"                      |
-|NonProfit     |   4703708|         96.3| see notes                               |
-|JobsRetained  |    324122|          6.6| see notes                               |
-|DateApproved  |         0|          0.0| earliest: 2020-04-03 latest: 2020-06-30 |
-|Lender        |         0|          0.0|                                         |
-|CD            |         0|          0.0|                                         |
-|LoanAmount    |    661218|         13.5| no values for loan amounts over 150K    |
+|variable      | n Missing |   % Missing |                        Validation Notes |
+|:-------------|----------:|------------:|----------------------------------------:|
+|LoanRange     |    4224170|         86.5| see notes                               |
+|BusinessName  |    4224171|         86.5| no values for loan amounts under 150K   |
+|Address       |    4224170|         86.5| no values for loan amounts under 150K   |
+|City          |          1|          0.0| see notes                               |
+|State         |          0|          0.0| see notes                               |
+|Zip           |        224|          0.0| see notes                               |
+|NAICSCode     |     133527|          2.7| validation pending                      |
+|BusinessType  |       4723|          0.1|                                         |
+|RaceEthnicity |          0|          0.0| 89.3% "Unanswered"                      |
+|Gender        |          0|          0.0| 77.7% "Unanswered"                      |
+|Veteran       |          0|          0.0| 84.7% "Unanswered"                      |
+|NonProfit     |    4703708|         96.3| see notes                               |
+|JobsRetained  |     324122|          6.6| see notes                               |
+|DateApproved  |          0|          0.0| earliest: 2020-04-03 latest: 2020-06-30 |
+|Lender        |          0|          0.0|                                         |
+|CD            |          0|          0.0|                                         |
+|LoanAmount    |     661218|         13.5| no values for loan amounts over 150K    |
 
 #### Notes
 

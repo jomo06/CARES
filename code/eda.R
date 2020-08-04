@@ -28,19 +28,31 @@ adbs %>%
 
 # EDA ---------------------------------------------------------------------
 
-## Loan Amount
+## Loan range unified
+adbs %>% 
+  count(LoanRange_Unified) %>% 
+  ggplot(aes(x = sort(LoanRange_Unified),
+             y = n)
+         ) +
+  geom_col() +
+  coord_flip()
 
+## RaceEthnicity
+adbs %>% 
+  count(RaceEthnicity) 
+
+## Loan Amount
 range(adbs$LoanAmount[!is.na(adbs$LoanAmount)])
 # Negative values?
 
-# 46 with negative values
+# 72 with negative values
 adbs %>% 
   filter(LoanAmount <= 0) %>% 
   summarise(n = n())
 
 adbs %>% 
   filter(LoanAmount > 0) %>% 
-  ggplot(aes(x = LoanAmount)) +
+  ggplot(aes(x = as.numeric(LoanAmount))) +
   geom_histogram()
 
 ## State
@@ -51,6 +63,8 @@ adbs %>%
   ggplot(aes(x = reorder(State,n),
              y = n)) +
   geom_col()
+
+
 
 ## Industry
 adbs %>% 
