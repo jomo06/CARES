@@ -65,11 +65,11 @@ cannot be used as-is for any kind of geo-coding or validation
 
 `State` contains a small number of odd values: 
 
-|State |    n |  % |
-|:-----|-----:|---:| 
-|AE    |     1| 0.0| zip cross-check suggests this is indeed a  military address outside the US
-|FI    |     1| 0.0| zip cross-check suggests this should be FL
-|XX    |   210| 0.0|
+|State |    n |  % |                                                             notes |
+|:-----|-----:|---:|------------------------------------------------------------------:|
+|AE    |     1| 0.0| zipcode suggests this is indeed a military address outside the US |
+|FI    |     1| 0.0| zipcode suggests this should be FL                                |
+|XX    |   210| 0.0|                                                                   |
 
 
 `Zip`: all non-missing values are in valid 5 digit format, but not all 
