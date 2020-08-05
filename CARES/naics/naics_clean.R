@@ -8,6 +8,9 @@
 
 library(tidyverse)
 
+# Only run once to read in data
+# source(file.path("bin", "pull_data.R"))
+
 naics = read_csv("data/NAICS Codes.csv")
 
 # Clean -------------------------------------------------------------------
@@ -87,6 +90,10 @@ naics_df = naics_6L %>%
 # naics_df %>% 
 #   mutate_all(is.na) %>% 
 #   summarise_all(~sum(.))
+
+if(!dir.exists(file.path("data", "tidy_data"))) {
+  dir.create(file.path("data", "tidy_data"))
+}
 
 write_csv(naics_df,
           "data/tidy_data/naics_clean.csv")

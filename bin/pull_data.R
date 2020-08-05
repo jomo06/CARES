@@ -17,5 +17,7 @@ drive_auth()
 
 # Search for shared folder -- takes a minute
 drive_download(drive_get("NAICS Codes.csv"),
-               path = "data/NAICS Codes.csv",
+               path = file.path("data",
+                                "Lookup Tables",
+                                "NAICS Codes.csv"),
                overwrite = T)
