@@ -7,7 +7,8 @@
 
 # Setup -------------------------------------------------------------------
 
-source("code/naics_clean.R")
+# Cleans NAICS data prior to joining
+# source(file.path("code","naics","naics_clean.R"))
 
 # Handle bad NAICS ---------------------------------------------------------
 
