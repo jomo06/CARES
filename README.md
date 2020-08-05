@@ -69,7 +69,7 @@ Variables:
 |CD            |          0|          0.0|                                         |
 |LoanAmount    |     661218|         13.5| no values for loan amounts over 150K    |
 
-#### Notes
+#### LoanRange
 
 `LoanRange` is missing from all state data, giving the 86.5% missing 
 number, but actual loan amount is included instead. To address this we
@@ -88,10 +88,12 @@ Additionally we have created numeric fields for other calcuations, such
 as ranking and summing across groups: `LoanRangeMin`, `LoanRangeMid`, 
 `LoanRangeMax`.
 
+#### City
 
 `City` is not a formalized field and contains open-text values, meaning it 
 cannot be used as-is for any kind of geo-coding or validation
 
+#### State
 
 `State` contains a small number of odd values: 
 
@@ -102,23 +104,31 @@ cannot be used as-is for any kind of geo-coding or validation
 |XX    |   210| 0.0|                                                                   |
 
 
-`Zip`: all non-missing values are in valid 5 digit format, but not all 
+#### Zip
+
+All non-missing values are in valid 5 digit format, but not all 
 of those match to real zip codes. Further validation pending. Note also 
 that just because a zip code is valid does not mean it can be mapped to 
 a ZCAT (e.g., PO Box Zips)
 
+#### NonProfit
 
-For `RaceEthnicity`, `Gender`, and `Veteran`, most of the data are 
-"Not Answered" due to these questions being optional.
+Has only Y or NA values, and so can be assumed to be a required question, 
+implying actual Missingness of 0%
 
+#### JobsRetained
 
-`NonProfit` has only Y or NA values, and so can be assumed to be a required
-question, implying actual Missingness of 0%
-
-
-`JobsRetained` contains some improbable values, and many values are Zero:
+contains some improbable values, and many values are Zero:
 
 |JobsRetained    |     n |   % |
 |:---------------|------:|----:|
 |Less than Zero  |      7|  0.0|
 |Zero            | 554146| 11.3|
+
+#### RaceEthnicity, Gender, and Veteran
+
+Most of the data are "Not Answered" due to these questions being optional.
+
+### NAICS Codes
+
+TO DO - @kbmorales
