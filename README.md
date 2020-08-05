@@ -19,8 +19,9 @@ Project examples:
 have an accompanying `docs/project_name/` folder
 - `data/` for raw data files that scripts rely on or that others would find 
 useful--I think tidied data files should be uploaded to Google Drive to make
-it easier for others to use. Please cite sources in the README!
-- `tests/` for each project's tests; i.e., `tests/NAICS/`
+it easier for others to use. Please organize data files roughly by topic! 
+Please cite sources in the README!
+- `tests/` for each project's unit tests; i.e., `tests/NAICS/`
 
 All finalized code should be able to be run on the output of the setup scripts
 in `bin/`, or on a dataset read in as a CSV file created by cleaning code.
@@ -113,7 +114,3 @@ question, implying actual Missingness of 0%
 |:---------------|------:|----:|
 |Less than Zero  |      7|  0.0|
 |Zero            | 554146| 11.3|
-
-
-### NAICS Code Industry
-
