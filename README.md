@@ -4,6 +4,27 @@ CARES Act data: PPP, EIDL and more.
 
 Data files can be downloaded from the [DataKind Google Drive](https://drive.google.com/drive/folders/1oGw8sobXw4PC_SNQ9AcfCuR8RBu-te2o?usp=sharing)
 
+## Directory Structure
+
+- `bin/` for in production executable files (like reading in the PPP data)
+- `CARES/` folder with individual project subfolders on the CARES act data. 
+This is so if we eventually want to make a package, it's set up for one. 
+Enhancements people make can go here, grouped by "project". A project is any 
+discreet enhancement to the data, like adding in NAICS code industry 
+identifiers. All projects should be documented in the README. 
+Project examples:
+  - `CARES/NAICS/` is where scripts go for joining NAICS and PPP data
+  - `CARES/census_mapping/` for US census joins, mapping, etc.
+- `docs/` for references, data dictionaries, manuals, etc. Each project should 
+have an accompanying `docs/project_name/` folder
+- `data/` for raw data files that scripts rely on or that others would find 
+useful--I think tidied data files should be uploaded to Google Drive to make
+it easier for others to use. Please cite sources in the README!
+- `tests/` for each project's tests; i.e., `tests/NAICS/`
+
+All finalized code should be able to be run on the output of the setup scripts
+in `bin/`, or on a dataset read in as a CSV file created by cleaning code.
+
 ## Data Sources
 
 - PPP Loan Data: [Small Business Administration's DropBox](https://sba.app.box.com/s/tvb0v5i57oa8gc6b5dcm9cyw7y2ms6pp)
