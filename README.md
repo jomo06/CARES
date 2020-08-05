@@ -4,6 +4,15 @@ CARES Act data: PPP, EIDL and more.
 
 Data files can be downloaded from the [DataKind Google Drive](https://drive.google.com/drive/folders/1oGw8sobXw4PC_SNQ9AcfCuR8RBu-te2o?usp=sharing)
 
+## Contributing
+
+*Please either fork or make a development branch* of the repo to contribute.
+
+*Please ask* a fellow volunteer to review your code with a pull request before 
+merging with the master branch! You can always ask [@JohnMcCambridge](https://github.com/JohnMcCambridge)
+or [@kbmorales](https://github.com/kbmorales) if you don't know who to ask to
+review!
+
 ## Directory Structure
 
 - `bin/` for in production executable files (like reading in the PPP data)
