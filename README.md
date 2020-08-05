@@ -15,14 +15,14 @@ review!
 ## Directory Structure
 
 - `bin/` for in production executable files (like reading in the PPP data)
-- `CARES/` folder with individual project subfolders on the CARES act data. 
+- `code/` folder with individual project subfolders on the CARES act data. 
 This is so if we eventually want to make a package, it's set up for one. 
 Enhancements people make can go here, grouped by "project". A project is any 
 discreet enhancement to the data, like adding in NAICS code industry 
 identifiers. All projects should be documented in the README. 
 Project examples:
-  - `CARES/NAICS/` is where scripts go for joining NAICS and PPP data
-  - `CARES/census_mapping/` for US census joins, mapping, etc.
+  - `code/NAICS/` is where scripts go for joining NAICS and PPP data
+  - `code/census_mapping/` for US census joins, mapping, etc.
 - `docs/` for references, data dictionaries, manuals, etc. Each project should 
 have an accompanying `docs/project_name/` folder
 - `data/` for raw data files that scripts rely on or that others would find 
