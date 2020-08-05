@@ -6,10 +6,9 @@ Data files can be downloaded from the [DataKind Google Drive](https://drive.goog
 
 ## Contributing
 
-*Please either fork or make a development branch* of the repo to contribute.
+Please either [fork](https://docs.github.com/en/enterprise/2.20/user/github/getting-started-with-github/fork-a-repo) or [make a development branch](https://thenewstack.io/dont-mess-with-the-master-working-with-branches-in-git-and-github/) of the repo to contribute.
 
-*Please ask* a fellow volunteer to review your code with a pull request before 
-merging with the master branch! You can always ask [@JohnMcCambridge](https://github.com/JohnMcCambridge)
+Please ask a fellow volunteer to review your code with a [pull request](https://yangsu.github.io/pull-request-tutorial/) before merging with the master branch! You can always ask [@JohnMcCambridge](https://github.com/JohnMcCambridge)
 or [@kbmorales](https://github.com/kbmorales) if you don't know who to ask to
 review!
 
