@@ -38,6 +38,7 @@ in `bin/`, or on a dataset read in as a CSV file created by cleaning code.
 
 - PPP Loan Data: [Small Business Administration's DropBox](https://sba.app.box.com/s/tvb0v5i57oa8gc6b5dcm9cyw7y2ms6pp)
 - NAICS code dictionary [US Census NAICS Files](https://www.census.gov/eos/www/naics/downloadables/downloadables.html)
+- [Data catlog of other sources](https://docs.google.com/spreadsheets/d/1d3wVJTFg3zjTVyjzy8hADxxTp1q5rDVbRKDJ6WyyNZk/edit#gid=0) assembled by Dave RM
 
 ## PPP Data Dictionary
 
