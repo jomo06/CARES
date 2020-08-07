@@ -45,6 +45,13 @@ adbs <- adbs %>%
 
 table(adbs$Zip_Valid_Format, useNA = "always")
 
+# let's validate against a large list of ZIPs from: https://simplemaps.com/data/us-cities
+uszips <- read.csv("../data/simplemaps_uszips_basicv1.72/uszips.csv")
+
+length(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))])            # 42,580 rows without a zip in the list
+length(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]))    # 5,036 unique zips
+sample(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]), 5) # this tends to give what are, according to Google Maps, valid ZIPs. Perhaps the simplemaps list is too old...
+# we do not appear to be much closer, but at least the error rate isn't horrible (42,000 out of 4,800,000)
 
 ### Data Check: State Names -----------------------------------------------
 # check against US Census data: American National Standards Institute (ANSI) Codes for States, the District of Columbia, Puerto Rico, and the Insular Areas of the United States
