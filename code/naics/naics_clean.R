@@ -11,7 +11,9 @@ library(tidyverse)
 # Only run once to read in data
 # source(file.path("bin", "pull_data.R"))
 
-naics = read_csv("data/NAICS Codes.csv")
+naics = read_csv(file.path("data",
+                           "Lookup Tables",
+                           "NAICS Codes.csv"))
 
 # Clean -------------------------------------------------------------------
 

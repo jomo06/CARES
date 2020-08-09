@@ -21,12 +21,3 @@ for (i in 1:nrow(csv_ls)) {
                                     csv_ls[i, "name"]), 
                    overwrite = TRUE)  
 }
-
-# NAICS ----------------------------------------------------------
-
-# Search for shared folder -- takes a minute
-drive_download(drive_get("NAICS Codes.csv"),
-               path = file.path("data",
-                                "Lookup Tables",
-                                "NAICS Codes.csv"),
-               overwrite = T)

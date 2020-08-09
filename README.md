@@ -14,9 +14,10 @@ review!
 
 ## Directory Structure
 
-- `bin/` for in production executable files (like reading in the PPP data)
+- `bin/` for in production executable files
+  - `bin/pull_data.R` authenticates with Google Drive, downloads PPP flat files
+  - `bin/ppp_data_merge.R` reads in PPP flat files
 - `code/` folder with individual project subfolders on the CARES act data. 
-This is so if we eventually want to make a package, it's set up for one. 
 Enhancements people make can go here, grouped by "project". A project is any 
 discreet enhancement to the data, like adding in NAICS code industry 
 identifiers. All projects should be documented in the README. 
