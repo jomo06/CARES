@@ -21,3 +21,8 @@ for (i in 1:nrow(csv_ls)) {
                                     csv_ls[i, "name"]), 
                    overwrite = TRUE)  
 }
+
+
+# Cleanup -----------------------------------------------------------------
+
+rm(files_ls, csv_ls)
