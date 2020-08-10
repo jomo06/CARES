@@ -1,16 +1,18 @@
 library(tidyverse)
+library(ggplot2)
 library(readxl)
 library(tigris)
+library(sf)
+library(sp)
 
-###########################################################
-# Below is a very rough mapping between PPP data and census data
-# Replace this section with cleaned data set when it's ready
-##########################################################
+############################
+# read in data
+############################
+# cleaned ZCTA-level PPP dataset
+ppp <- read_csv("data/tidy_data/Michigan.csv")
 
-### read in data
-ppp_mi <- read_csv("data/All Data By State/PPP Data up to 150K - MI.csv")
-
-census_geo <- read_csv("data/demographics/acs_2018_block_groups_zcta.csv",
+# ZCTA to block-group mapping
+zcta_mapping <- read_csv("data/Lookup Tables/acs_2018_block_groups_zcta.csv",
                          col_types = cols(
                              .default = col_character(),
                              block_group_interpolated_latitude = col_double(),
@@ -19,34 +21,56 @@ census_geo <- read_csv("data/demographics/acs_2018_block_groups_zcta.csv",
                              zcta_interpolated_longitude = col_double()
                          ))
 
+# Demographic files
 zcta_demo <- read_csv("data/demographics/zipcodeDemographics.csv")
 county_demo <- read_csv("data/demographics/countyDemographics.csv")
 cd_demo <- read_csv("data/demographics/congressional districtDemographics.csv")
 state_demo <- read_csv("data/demographics/stateDemographics.csv")
 
-### download shapefiles
-counties_mi <- counties(state = "MI")
+# download shapefiles
+#zcta_shp <- zctas(state = "MI")
+counties_shp <- counties(state = "MI")
+#cd_shp <- congressional_districts(state = "MI")
 
-### merge in census geo
-ppp_mi$Zip <- as.character(ppp_mi$Zip)
-ppp_mi_2 <- ppp_mi %>% left_join(zcta_demo, by = c("zcta" = "GEOID"))
-sum(is.na(ppp_mi_2$county_fips_code)) # 660 out of 101166 have no match
+############################
+# merge in census geos
+############################
+# clean up zcta to census geo cw
+zcta_mapping <- zcta_mapping %>% 
+    mutate(state_fips_code = str_pad(state_fips_code, 2, pad = "0"),
+           county_fips_code = str_pad(county_fips_code, 3, pad = "0"),
+           tract_fips_code = str_pad(tract_fips_code, 6, pad = "0"),
+           zcta = str_pad(zcta, 5, pad = "0"),
+           zcta_geoid = zcta,
+           state_geoid = state_fips_code,
+           county_geoid = paste0(state_fips_code, county_fips_code),
+           tract_geoid = paste0(state_fips_code, county_fips_code, tract_fips_code),
+           block_group_geoid = paste0(state_fips_code, county_fips_code, tract_fips_code, block_group_fips_code))
 
-# concatenate state codes and fips codes to create GEOID
-ppp_mi_3 <- ppp_mi_2 %>% 
-    mutate(county_geoid = paste0(str_pad(state_fips_code, 2, pad = "0"), 
-                                 str_pad(county_fips_code, 3, pad = "0")))
-# TO DO: add congressional district
+# keep only ZCTA-county mapping for now
+zcta_county_mapping <- zcta_mapping %>% 
+    select(zcta_geoid, county_geoid) %>% 
+    distinct()
 
-### aggregate by county
-ppp_mi_county <- ppp_mi_3 %>% 
+# add census geo to ppp dataset
+ppp_census <- ppp %>% 
+    left_join(zcta_county_mapping, by = c("GEOID" = "zcta_geoid"))
+
+# aggregate by county & add county demographics
+dat <- ppp_census %>% 
     group_by(county_geoid) %>% 
-    summarise(sum(LoanAmount)) %>% 
+    summarize(val = sum(Mid, na.rm = TRUE)) %>% 
     left_join(county_demo, by = c("county_geoid" = "GEOID"))
-# sum(is.na(ppp_mi_county$total_population)) # only 1 missing
 
-###########################################################
-# Mapping code starts here
-###########################################################
+############################
+# create map
+############################
+spdf <- merge(counties_shp, dat, by.x="GEOID", by.y="county_geoid")
+sf <- st_as_sf(spdf)
+sf <- cbind(sf, st_coordinates(st_centroid(sf)))
 
-### create leaflet map of counties
+ggplot(sf) +
+    geom_sf(aes(fill = total_population)) +
+    geom_point(aes(x=X, y=Y, size=val), shape=1) +
+    scale_fill_viridis_c(trans="sqrt")
+
