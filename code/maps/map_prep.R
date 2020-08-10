@@ -5,6 +5,8 @@ library(tigris)
 library(sf)
 library(sp)
 
+setwd("C:/Users/kathy/Documents/github/CARES")
+
 ############################
 # read in data
 ############################
@@ -30,7 +32,7 @@ state_demo <- read_csv("data/demographics/stateDemographics.csv")
 # download shapefiles
 #zcta_shp <- zctas(state = "MI")
 counties_shp <- counties(state = "MI")
-#cd_shp <- congressional_districts(state = "MI")
+#cd_shp <- congressional_districts()
 
 ############################
 # merge in census geos
@@ -54,23 +56,27 @@ zcta_county_mapping <- zcta_mapping %>%
 
 # add census geo to ppp dataset
 ppp_census <- ppp %>% 
+    mutate(GEOID = str_pad(as.character(GEOID), 5, pad = "0")) %>% 
     left_join(zcta_county_mapping, by = c("GEOID" = "zcta_geoid"))
 
-# aggregate by county & add county demographics
-dat <- ppp_census %>% 
-    group_by(county_geoid) %>% 
-    summarize(val = sum(Mid, na.rm = TRUE)) %>% 
-    left_join(county_demo, by = c("county_geoid" = "GEOID"))
+# # aggregate by county & add county demographics
+# dat <- ppp_census %>% 
+#     group_by(county_geoid) %>% 
+#     summarize(val = sum(Mid, na.rm = TRUE)) %>% 
+#     left_join(county_demo, by = c("county_geoid" = "GEOID"))
+# 
+# ############################
+# # create map
+# ############################
+# spdf <- merge(counties_shp, dat, by.x="GEOID", by.y="county_geoid")
+# sf <- st_as_sf(spdf)
+# sf <- cbind(sf, st_coordinates(st_centroid(sf)))
+# 
+# ggplot(sf) +
+#     geom_sf(aes(fill = total_population)) +
+#     geom_point(aes(x=X, y=Y, size=val), pch=21, fill = '#ffffff50') +
+#     scale_fill_viridis_c(trans="sqrt")
 
 ############################
-# create map
+# leaflet + shiny
 ############################
-spdf <- merge(counties_shp, dat, by.x="GEOID", by.y="county_geoid")
-sf <- st_as_sf(spdf)
-sf <- cbind(sf, st_coordinates(st_centroid(sf)))
-
-ggplot(sf) +
-    geom_sf(aes(fill = total_population)) +
-    geom_point(aes(x=X, y=Y, size=val), shape=1) +
-    scale_fill_viridis_c(trans="sqrt")
-
