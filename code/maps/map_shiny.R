@@ -1,3 +1,7 @@
+#################################
+# NOTE: run map_prep.R first to create the input datasets county_demo and ppp_census
+#################################
+
 library(shiny)
 library(leaflet)
 library(leaflet.extras)
