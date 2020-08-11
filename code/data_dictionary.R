@@ -46,12 +46,20 @@ adbs <- adbs %>%
 table(adbs$Zip_Valid_Format, useNA = "always")
 
 # let's validate against a large list of ZIPs from: https://simplemaps.com/data/us-cities
-uszips <- read.csv("../data/simplemaps_uszips_basicv1.72/uszips.csv")
+uszips <- read.csv("data/simplemaps_uszips_basicv1.72/uszips.csv")
 
 length(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))])            # 42,580 rows without a zip in the list
-length(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]))    # 5,036 unique zips
+length(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]))    # 5,036 unique unmatched zips
 sample(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]), 5) # this tends to give what are, according to Google Maps, valid ZIPs. Perhaps the simplemaps list is too old...
 # we do not appear to be much closer, but at least the error rate isn't horrible (42,000 out of 4,800,000)
+
+# instead let's use the file 'zip_to_zcta_2019.csv' and see if we get better coverage
+ztz <- read.csv("data/Lookup Tables/zip_to_zcta_2019.csv")
+
+length(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", ztz$ZIP_CODE))])            # 1,627 rows without a zip in the list
+length(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", ztz$ZIP_CODE))]))    # 331 unique unmatched zips
+sample(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", ztz$ZIP_CODE))]), 5) # this sampling does not seem to be all valid zips!
+# we appear to be much closer using this list
 
 ### Data Check: State Names -----------------------------------------------
 # check against US Census data: American National Standards Institute (ANSI) Codes for States, the District of Columbia, Puerto Rico, and the Insular Areas of the United States
