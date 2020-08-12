@@ -6,7 +6,7 @@
 # Setup -------------------------------------------------------------------
 
 # Data prep should be performed first
-# source("code/ppp_data_merge.R")
+# source("./bin/ppp_data_merge.R")
 
 library(tidyverse)
 library(lubridate)
@@ -46,7 +46,7 @@ adbs <- adbs %>%
 table(adbs$Zip_Valid_Format, useNA = "always")
 
 # let's validate against a large list of ZIPs from: https://simplemaps.com/data/us-cities
-uszips <- read.csv("../data/simplemaps_uszips_basicv1.72/uszips.csv")
+uszips <- read.csv("./data/simplemaps_uszips_basicv1.72/uszips.csv")
 
 length(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))])            # 42,580 rows without a zip in the list
 length(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]))    # 5,036 unique zips
@@ -56,12 +56,36 @@ sample(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]), 5) # this
 ### Data Check: State Names -----------------------------------------------
 # check against US Census data: American National Standards Institute (ANSI) Codes for States, the District of Columbia, Puerto Rico, and the Insular Areas of the United States
 #via: https://www.census.gov/library/reference/code-lists/ansi.html
-statecodes <- read.table("../data/census/state.txt", sep = "|", header = TRUE)
+statecodes <- read.table("./data/census/state.txt", sep = "|", header = TRUE)
 
 table(adbs$State[(!adbs$State %in% statecodes$STUSAB)]) # list counts of unmatched results, showing 1 AE, 1 FI, 210 XX
 
 adbs[adbs$State == "FI",] # based on the ZIP code, this should be FL, and can be 'fixed' easily enough as part of final data cleaning
 adbs[adbs$State == "AE",] # when viewing ZIP, Lending data, this does indeed appear to be tied to a military address in Europe, Middle East, Africa or Canada
+
+
+cat(sprintf("%s missing states", nrow(adbs[adbs$ImputedState=='XX',])))
+impute_zips = adbs[(adbs$State=='XX' & !is.na(adbs$Zip)),]$Zip
+cat(sprintf("%s missing states, with zip entry", length(impute_zips)))
+
+
+adbs$ImputedState =adbs$State
+imputed_states = c()
+missing_zips = c()
+for (zip in impute_zips){
+	state = uszips[uszips$zip==zip,]$state_id
+	if (identical(state, character(0))){
+		state = NA
+		missing_zips = c(missing_zips, zip)}
+	imputed_states=c(imputed_states, state)
+	}
+	
+adbs[which(adbs$ImputedState=='XX' & !is.na(adbs$Zip)), arr.ind=TRUE]$ImputedState = imputed_states
+
+cat(sprintf("out of the %s missing states that had zip entry, %s states imputed from zipcodes, %s zipcodes not found in 'uszips' file", length(impute_zips), (length(imputed_states) - length(missing_zips)),length(missing_zips)))
+
+
+
 
 
 ### Data Check: City Names -------------------------------------------------
