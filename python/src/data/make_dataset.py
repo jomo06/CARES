@@ -16,6 +16,10 @@ import pickle
 from googleapiclient.discovery import build
 
 from tqdm import tqdm
+# Make sure any previous runs of tqdm that were interrupted are cleared out
+getattr(tqdm, '_instances', {}).clear()
+
+import argparse
 
 
 def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.pickle', local_copy=None):
@@ -25,7 +29,8 @@ def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.p
     pandas DataFrame for further analysis.
 
     Fair warning: initial testing indicates that this will take
-    about XXXX minutes to complete. So save
+    a little more than 8 minutes to complete. So save it locally to 
+    avoid downloading and stitching steps if you can.
 
 
     Parameters
@@ -129,9 +134,9 @@ and mimeType = 'application/vnd.google-apps.folder'"
 
 
 
-@click.command()
-@click.argument('input_filepath', type=click.Path(exists=True))
-@click.argument('output_filepath', type=click.Path())
+#@click.command()
+#@click.argument('input_filepath', type=click.Path(exists=True))
+#@click.argument('output_filepath', type=click.Path())
 def main(input_filepath, output_filepath):
     """ Runs data processing scripts to turn raw data from (../raw) into
         cleaned data ready to be analyzed (saved in ../processed).
@@ -139,8 +144,15 @@ def main(input_filepath, output_filepath):
     logger = logging.getLogger(__name__)
     logger.info('making final data set from raw data')
 
+    pull_ppp_data(input_filepath, local_copy=output_filepath)
+
+
+
+
+
 
 if __name__ == '__main__':
+
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
 
@@ -151,4 +163,23 @@ if __name__ == '__main__':
     # load up the .env entries as environment variables
     load_dotenv(find_dotenv())
 
-    main()
+    ########### SETUP COMMAND-LINE ARUGMENTS ###########
+
+    parser = argparse.ArgumentParser(description='Runs the data ingest \
+pipeline.')
+
+    parser.add_argument('-g', '--google_drive_token_path', type=str,
+        default="/home/jovyan/work/secure_keys/token.pickle",
+                        help='Filepath of the token.pkl file containing \
+user credentials for Google Drive where raw data are stored.')
+
+    parser.add_argument('-l', '--local_copy', type=str,
+        default=None,
+                        help='Optional filepath for where resultant \
+merged data will be stored. Make sure it is a named *.csv file.')
+
+    args = vars(parser.parse_args())
+
+    
+
+    main(args['google_drive_token_path'], args['local_copy'])

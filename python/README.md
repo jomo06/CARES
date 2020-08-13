@@ -18,10 +18,10 @@ Data engineering and analysis of CARES Act funding data (this portion in Python 
     * **Note:** if you have updated the environment.yml file, you'll need to use the Dockerfile as part of the install (instead of pulling an image from DockerHub) so that it can re-build the image using the new requirements. You should probably also update the tag on line 5 of `docker/docker-compose.yml` to reflect the new requirements of the image so it doesn't overwrite your old, functioning image.
         * Additionally, the most effective way to update the environment for future builds is to update the `environment.yml` file by running `conda env export -f environment.yml` from within a terminal tab of JupyterLab in a running container that has the new requirements installed. Note the lack of `--no-builds` at the end: this can cause undue delay during image building by making the conda solver figure out the exact hashes to use for your package versions. Since we're simply updating the image based upon a modified container originally spun up using that same image, there's no need to exclude the exact builds from the conda export process. 
 
-In order to use the container, you'll need to use your browser:
-
-1. Go to [http://localhost:10000/lab](http://localhost:10000/?token=<token>) for access.
+2. Go to [http://localhost:10000/lab](http://localhost:10000/?token=<token>) for access.
     * Note that JupyterLab will require you to enter a token before it will allow you access via the browser. This token can be found in the log messages printed to your terminal after starting the service via `docker-compose` (look for the line that says "Or copy and paste one of these URLs:" and then copy the portion of the URL that comes after "?token=").
+
+WARNING: before doing any of this, make sure your Docker Desktop has been given access to a sizeable fraction of your system memory (e.g. the machine all of this was developed on gave it 8 GB). This will ensure it doesn't run out of memory while doing the initial data ingest.
 
 #### Notes
 
