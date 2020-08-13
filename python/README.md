@@ -13,27 +13,8 @@ Data engineering and analysis of CARES Act funding data (this portion in Python 
 
 ### The Docker Approach
 
-1. From the terminal, in the project's root directory, enter `docker-compose -f docker/docker-compose.yml up --build` and the container should successfully spin up, with log messages in the terminal indicating this.
-    * If this isn't your first time using the service (e.g. you've already built the image once) and you don't have any updates to the `environment.yml` file that change the container's dependencies, then just use `docker-compose -f docker/docker-compose.yml up`.
-    * **Note:** if you have updated the environment.yml file, you'll need to use the Dockerfile as part of the install (instead of pulling an image from DockerHub) so that it can re-build the image using the new requirements. You should probably also update the tag on line 5 of `docker/docker-compose.yml` to reflect the new requirements of the image so it doesn't overwrite your old, functioning image.
-        * Additionally, the most effective way to update the environment for future builds is to update the `environment.yml` file by running `conda env export -f environment.yml` from within a terminal tab of JupyterLab in a running container that has the new requirements installed. Note the lack of `--no-builds` at the end: this can cause undue delay during image building by making the conda solver figure out the exact hashes to use for your package versions. Since we're simply updating the image based upon a modified container originally spun up using that same image, there's no need to exclude the exact builds from the conda export process. 
+See main project README.
 
-2. Go to [http://localhost:10000/lab](http://localhost:10000/?token=<token>) for access.
-    * Note that JupyterLab will require you to enter a token before it will allow you access via the browser. This token can be found in the log messages printed to your terminal after starting the service via `docker-compose` (look for the line that says "Or copy and paste one of these URLs:" and then copy the portion of the URL that comes after "?token=").
-
-WARNING: before doing any of this, make sure your Docker Desktop has been given access to a sizeable fraction of your system memory (e.g. the machine all of this was developed on gave it 8 GB). This will ensure it doesn't run out of memory while doing the initial data ingest.
-
-#### Notes
-
-1. If you want to use the terminal for any activities (e.g. adding new packages to the environment), make sure you first activate the environment via `conda activate <environment_name>`
-    * Whenever you install new packages, if you want them to be available the next time you spin this environment up, please make sure you first overwrite the `environment.yml` file with your new dependencies via (assuming your terminal is currently in the `notebooks/` directory) `conda env export -f ../environment.yml --no-builds`
-2. The working directory in which you launch your container via `docker-compose.yml` will be mounted inside the Docker container, meaning that you'll see any notebooks, scripts, etc. that you already had in that directory when you spun up the container.
-3. Check the kernel you're using for any new notebooks to ensure that it's set to the proper conda environment.
-4. In order to utilize plotly visualization within notebooks in JupyterLab, you need to agree to do the re-build that you are prompted to do when first opening up Jupyterlab in the container. After agreeing, wait a minute or two until it prompts you to reload JupyterLab. Once you do so, plotly functionality should be enabled for that container.
-
-### The conda Approach
-
-1. From the terminal, run `conda env create -f environment.yml`
 
 
 ## Project Organization
