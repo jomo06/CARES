@@ -5,3 +5,9 @@
 data/All Data By State/
 data/tidy_data/
 *.Rproj
+
+.DS_Store
+
+# Python stuff
+python/data
+python/secure_keys
