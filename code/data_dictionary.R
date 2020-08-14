@@ -53,6 +53,16 @@ length(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]))    # 5,03
 sample(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]), 5) # this tends to give what are, according to Google Maps, valid ZIPs. Perhaps the simplemaps list is too old...
 # we do not appear to be much closer, but at least the error rate isn't horrible (42,000 out of 4,800,000)
 
+#Data Validation: Zip --------------------------------------------------------------
+#True indicates entry is a valid zip, i.e. it exists in the zip-reference list 
+adbs <- adbs %>% mutate(ValidZip = case_when(
+  is.na(Zip) ~ "No Entry",
+  Zip %in% sprintf("%05d", uszips$zip) ~ "True", 
+  !Zip %in% sprintf("%05d", uszips$zip) ~ "Fail"))
+
+table(adbs$ValidZip, useNA = "always") 
+
+
 ### Data Check: State Names -----------------------------------------------
 # check against US Census data: American National Standards Institute (ANSI) Codes for States, the District of Columbia, Puerto Rico, and the Insular Areas of the United States
 #via: https://www.census.gov/library/reference/code-lists/ansi.html
@@ -63,34 +73,35 @@ table(adbs$State[(!adbs$State %in% statecodes$STUSAB)]) # list counts of unmatch
 adbs[adbs$State == "FI",] # based on the ZIP code, this should be FL, and can be 'fixed' easily enough as part of final data cleaning
 adbs[adbs$State == "AE",] # when viewing ZIP, Lending data, this does indeed appear to be tied to a military address in Europe, Middle East, Africa or Canada
 
-
+# Impute Missing Fields: state --------------------------------------------------------------
+# Impute missing state by zipcode. Here, we do not check if city and zipcode match
 cat(sprintf("%s missing states", nrow(adbs[adbs$ImputedState=='XX',])))
-impute_zips = adbs[(adbs$State=='XX' & !is.na(adbs$Zip)),]$Zip
-cat(sprintf("%s missing states, with zip entry", length(impute_zips)))
+XXstate_zip = adbs[(adbs$State=='XX' & !is.na(adbs$Zip)),]$Zip
+XXstate_city = adbs[(adbs$State=='XX' & !is.na(adbs$Zip)),]$City
+cat(sprintf("%s missing states, with zip entry", length(XXstate_zips)))
 
 
 adbs$ImputedState =adbs$State
 imputed_states = c()
 missing_zips = c()
-for (zip in impute_zips){
-	state = uszips[uszips$zip==zip,]$state_id
-	if (identical(state, character(0))){
-		state = NA
-		missing_zips = c(missing_zips, zip)}
-	imputed_states=c(imputed_states, state)
-	}
-	
+for (zip in XXstate_zip){
+  state = uszips[uszips$zip==zip,]$state_id
+  
+  if (identical(state, character(0))){
+    state = NA
+    missing_zips = c(missing_zips, zip)}
+  imputed_states=c(imputed_states, state)
+}
+
 adbs[which(adbs$ImputedState=='XX' & !is.na(adbs$Zip)), arr.ind=TRUE]$ImputedState = imputed_states
 
 cat(sprintf("out of the %s missing states that had zip entry, %s states imputed from zipcodes, %s zipcodes not found in 'uszips' file", length(impute_zips), (length(imputed_states) - length(missing_zips)),length(missing_zips)))
 
 
 
-
-
 ### Data Check: City Names -------------------------------------------------
 # check City values against a large list of likely names, via: https://simplemaps.com/data/us-cities
-uscities <- read.csv("../data/simplemaps_uscities_basicv1.6/uscities.csv")
+uscities <- read.csv("./data/simplemaps_uscities_basicv1.6/uscities.csv")
 
 citydict <- sort(unique(tolower(gsub("[[:digit:][:space:][:punct:]]", "", uscities$city))))
 adbscities <- sort(unique(tolower(gsub("[[:digit:][:space:][:punct:]]", "", adbs$City))))
@@ -106,6 +117,30 @@ adbscities$match_10 <- citydict[citymatch_10]
 
 # this output is showing issues: for example, "schicago" matches to chicago, but really it is more likely to be "South Chicago"
 # a hand built list, with the above as a baseline, may be most effective.
+
+
+#Data Validation: City Names --------------------------------------------------------------
+#True indicates entry is a valid city name, i.e. it exists in the city-reference list 
+#SpecialChar indicates entry is not in city-reference list and has non-alphabetical characters, other than '-' and/or '.'
+#False indicates entry is not in city-reference list and does not have special characters. 
+#looking at False cities, we see that sometimes neighborhood was entered instead of city. 
+#For example, entries such as vannuys or north hollywood: both are neighborhoods in LA county, but neither are cities!
+#Also, some of these erroneous entries are a result of including N/S/E/W. For example, while N LEWISBURG is not a city, LEWISBURG is a city
+
+#Note: We also replace "saint" by "st": going from 4581465 True entries to 4625483, increase of 44,000 
+
+
+adbs <- adbs %>% mutate(ValidCity = case_when(
+  (is.na(City) | City =="N/A") ~ "No Entry", 
+  (tolower(gsub("[[:digit:][:space:][:punct:]]", "" , str_replace(tolower(City), "saint", "st"))) %in%  citydict) ~ "True",
+  !grepl("^[A-Za-z]+$", gsub("[,.[:space:]]", "" , City)) ~ "SpecialChar",
+  TRUE ~ "Fail"))
+
+table(adbs$ValidCity, useNA = "always")
+
+
+
+
 
 ### Data Check: Jobs Retained ----------------------------------------------
 
@@ -136,3 +171,7 @@ table(adbs$DateApproved, useNA="always")
 # 4353 exact duplicates
 
 # adbs_dupes=adbs[duplicated(adbs),]
+
+
+
+
