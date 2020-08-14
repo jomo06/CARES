@@ -32,21 +32,21 @@ review!
 - `bin/` for in production executable files
   - `bin/pull_data.R` authenticates with Google Drive, downloads PPP flat files
   - `bin/ppp_data_merge.R` reads in PPP flat files
-- `code/` folder with individual project subfolders on the CARES act data. 
-Enhancements people make can go here, grouped by "project". A project is any 
-discreet enhancement to the data, like adding in NAICS code industry 
-identifiers. All projects should be documented in the README. 
+- `code/` folder with individual project subfolders on the CARES act data.
+Enhancements people make can go here, grouped by "project". A project is any
+discreet enhancement to the data, like adding in NAICS code industry
+identifiers. All projects should be documented in the README.
 Project examples:
   - `code/NAICS/` is where scripts go for joining NAICS and PPP data
   - `code/census_mapping/` for US census joins, mapping, etc.
-- `docs/` for references, data dictionaries, manuals, etc. Each project should 
+- `docs/` for references, data dictionaries, manuals, etc. Each project should
 have an accompanying `docs/project_name/` folder
-- `data/` for raw data files that scripts rely on or that others would find 
+- `data/` for raw data files that scripts rely on or that others would find
 useful--I think tidied data files should be uploaded to Google Drive to make
-it easier for others to use. Please organize data files roughly by topic! 
+it easier for others to use. Please organize data files roughly by topic!
 Please cite sources in the README!
 - `tests/` for each project's unit tests; i.e., `tests/NAICS/`
-- `src/` contains python code that can be used together as a single `src` package and installed in a dev environment via `pip -e .` when in the repo root.
+- `src/` contains python code that can be used together as a single `src` package and installed in a dev environment via `pip install -e .` when in the repo root.
 - `docker/` contains the elements needed to run a Docker instance of the python code, to ensure consistent dependency trees across data scientists
 - `python/` contains some extra elements for python data exploration, such as interactive notebooks that can be used to test out basic concepts prior to committing them as scripts/modules.
 
@@ -62,10 +62,11 @@ If you want to work from a consistent dependency tree, the best way is through D
 1. From the terminal, in the project's root directory, enter `docker-compose -f docker/docker-compose.yml up --build` and the container should successfully spin up, with log messages in the terminal indicating this.
     * If this isn't your first time using the service (e.g. you've already built the image once) and you don't have any updates to the `environment.yml` file that change the container's dependencies, then just use `docker-compose -f docker/docker-compose.yml up`.
     * **Note:** if you have updated the environment.yml file, you'll need to use the Dockerfile as part of the install (instead of pulling an image from DockerHub) so that it can re-build the image using the new requirements. You should probably also update the tag on line 5 of `docker/docker-compose.yml` to reflect the new requirements of the image so it doesn't overwrite your old, functioning image.
-        * Additionally, the most effective way to update the environment for future builds is to update the `environment.yml` file by running `conda env export -f environment.yml` from within a terminal tab of JupyterLab in a running container that has the new requirements installed. Note the lack of `--no-builds` at the end: this can cause undue delay during image building by making the conda solver figure out the exact hashes to use for your package versions. Since we're simply updating the image based upon a modified container originally spun up using that same image, there's no need to exclude the exact builds from the conda export process. 
+        * Additionally, the most effective way to update the environment for future builds is to update the `environment.yml` file by running `conda env export -f environment.yml` from within a terminal tab of JupyterLab in a running container that has the new requirements installed. Note the lack of `--no-builds` at the end: this can cause undue delay during image building by making the conda solver figure out the exact hashes to use for your package versions. Since we're simply updating the image based upon a modified container originally spun up using that same image, there's no need to exclude the exact builds from the conda export process.
 
 2. Go to [http://localhost:10000/lab](http://localhost:10000/?token=<token>) for access.
     * Note that JupyterLab will require you to enter a token before it will allow you access via the browser. This token can be found in the log messages printed to your terminal after starting the service via `docker-compose` (look for the line that says "Or copy and paste one of these URLs:" and then copy the portion of the URL that comes after "?token=").
+    * JupyterLab may direct you to use port 8888 or the like -- go with port 1000 above, regardless of what the "copy-paste" links in the terminal says.
 
 WARNING: before doing any of this, make sure your Docker Desktop has been given access to a sizeable fraction of your system memory (e.g. the machine all of this was developed on gave it 8 GB). This will ensure it doesn't run out of memory while doing the initial data ingest.
 
@@ -120,7 +121,7 @@ Variables:
 
 #### LoanRange
 
-`LoanRange` is missing from all state data, giving the 86.5% missing 
+`LoanRange` is missing from all state data, giving the 86.5% missing
 number, but actual loan amount is included instead. To address this we
 have created a computed field `LoanRange_Unified` which assigns all precise
 numeric loan values from the 'Under 150K' State files into compatible groups.
@@ -134,17 +135,17 @@ Within these groups, some values are improbably low e.g.:
 |$100 - $1000    | 26318| 0.5|
 
 Additionally we have created numeric fields for other calcuations, such
-as ranking and summing across groups: `LoanRangeMin`, `LoanRangeMid`, 
+as ranking and summing across groups: `LoanRangeMin`, `LoanRangeMid`,
 `LoanRangeMax`.
 
 #### City
 
-`City` is not a formalized field and contains open-text values, meaning it 
+`City` is not a formalized field and contains open-text values, meaning it
 cannot be used as-is for any kind of geo-coding or validation
 
 #### State
 
-`State` contains a small number of odd values: 
+`State` contains a small number of odd values:
 
 |State |    n |  % |                                                             notes |
 |:-----|-----:|---:|------------------------------------------------------------------:|
@@ -155,14 +156,14 @@ cannot be used as-is for any kind of geo-coding or validation
 
 #### Zip
 
-All non-missing values are in valid 5 digit format, but not all 
-of those match to real zip codes. Further validation pending. Note also 
-that just because a zip code is valid does not mean it can be mapped to 
+All non-missing values are in valid 5 digit format, but not all
+of those match to real zip codes. Further validation pending. Note also
+that just because a zip code is valid does not mean it can be mapped to
 a ZCAT (e.g., PO Box Zips)
 
 #### NonProfit
 
-Has only Y or NA values, and so can be assumed to be a required question, 
+Has only Y or NA values, and so can be assumed to be a required question,
 implying actual Missingness of 0%
 
 #### JobsRetained
