@@ -34,11 +34,11 @@ table(grepl("\\d{5}([ \\-]\\d{4})?", adbs$Zip), nchar(adbs$Zip),useNA = "always"
 #                         FALSE       0     224
 #                         TRUE  4885164       0
 #                         <NA>        0       0
-#                        
+#
 # result indicates that all present values are of valid length as simple 5 digit zips, however 224 are missing entirely and are recorded in original data as NAs
 # let's code this into a new variable, so that we can later evaluate each row for validation along various checks
 
-adbs <- adbs %>% 
+adbs <- adbs %>%
   mutate(Zip_Valid_Format = case_when(grepl("\\d{5}", Zip)        ~ "Pass: 5 Digit Format",
                                       grepl("\\d{5}-\\d{4}", Zip) ~ "Pass: 5dash4 Digit Format ",
                                       TRUE ~ "Fail"))
@@ -46,22 +46,33 @@ adbs <- adbs %>%
 table(adbs$Zip_Valid_Format, useNA = "always")
 
 # let's validate against a large list of ZIPs from: https://simplemaps.com/data/us-cities
-uszips <- read.csv("./data/simplemaps_uszips_basicv1.72/uszips.csv")
+
+
+uszips <- read.csv("data/simplemaps_uszips_basicv1.72/uszips.csv")
 
 length(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))])            # 42,580 rows without a zip in the list
-length(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]))    # 5,036 unique zips
+length(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]))    # 5,036 unique unmatched zips
 sample(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]), 5) # this tends to give what are, according to Google Maps, valid ZIPs. Perhaps the simplemaps list is too old...
 # we do not appear to be much closer, but at least the error rate isn't horrible (42,000 out of 4,800,000)
 
+
 #Data Validation: Zip --------------------------------------------------------------
-#True indicates entry is a valid zip, i.e. it exists in the zip-reference list 
+#True indicates entry is a valid zip, i.e. it exists in the zip-reference list
 adbs <- adbs %>% mutate(ValidZip = case_when(
   is.na(Zip) ~ "No Entry",
-  Zip %in% sprintf("%05d", uszips$zip) ~ "True", 
+  Zip %in% sprintf("%05d", uszips$zip) ~ "True",
   !Zip %in% sprintf("%05d", uszips$zip) ~ "Fail"))
 
-table(adbs$ValidZip, useNA = "always") 
+table(adbs$ValidZip, useNA = "always")
 
+
+# instead let's use the file 'zip_to_zcta_2019.csv' and see if we get better coverage
+ztz <- read.csv("data/Lookup Tables/zip_to_zcta_2019.csv")
+
+length(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", ztz$ZIP_CODE))])            # 1,627 rows without a zip in the list
+length(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", ztz$ZIP_CODE))]))    # 331 unique unmatched zips
+sample(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", ztz$ZIP_CODE))]), 5) # this sampling does not seem to be all valid zips!
+# we appear to be much closer using this list
 
 ### Data Check: State Names -----------------------------------------------
 # check against US Census data: American National Standards Institute (ANSI) Codes for States, the District of Columbia, Puerto Rico, and the Insular Areas of the United States
@@ -86,7 +97,7 @@ imputed_states = c()
 missing_zips = c()
 for (zip in XXstate_zip){
   state = uszips[uszips$zip==zip,]$state_id
-  
+
   if (identical(state, character(0))){
     state = NA
     missing_zips = c(missing_zips, zip)}
@@ -120,18 +131,18 @@ adbscities$match_10 <- citydict[citymatch_10]
 
 
 #Data Validation: City Names --------------------------------------------------------------
-#True indicates entry is a valid city name, i.e. it exists in the city-reference list 
+#True indicates entry is a valid city name, i.e. it exists in the city-reference list
 #SpecialChar indicates entry is not in city-reference list and has non-alphabetical characters, other than '-' and/or '.'
-#False indicates entry is not in city-reference list and does not have special characters. 
-#looking at False cities, we see that sometimes neighborhood was entered instead of city. 
+#False indicates entry is not in city-reference list and does not have special characters.
+#looking at False cities, we see that sometimes neighborhood was entered instead of city.
 #For example, entries such as vannuys or north hollywood: both are neighborhoods in LA county, but neither are cities!
 #Also, some of these erroneous entries are a result of including N/S/E/W. For example, while N LEWISBURG is not a city, LEWISBURG is a city
 
-#Note: We also replace "saint" by "st": going from 4581465 True entries to 4625483, increase of 44,000 
+#Note: We also replace "saint" by "st": going from 4581465 True entries to 4625483, increase of 44,000
 
 
 adbs <- adbs %>% mutate(ValidCity = case_when(
-  (is.na(City) | City =="N/A") ~ "No Entry", 
+  (is.na(City) | City =="N/A") ~ "No Entry",
   (tolower(gsub("[[:digit:][:space:][:punct:]]", "" , str_replace(tolower(City), "saint", "st"))) %in%  citydict) ~ "True",
   !grepl("^[A-Za-z]+$", gsub("[,.[:space:]]", "" , City)) ~ "SpecialChar",
   TRUE ~ "Fail"))
@@ -150,7 +161,7 @@ summary(near(as.numeric(adbs$JobsRetained), as.integer(as.numeric(adbs$JobsRetai
 # Coerce -------------------------------------------------------------------
 
 ### Coersions
-adbs = adbs %>% 
+adbs = adbs %>%
   mutate(JobsRetained = as.numeric(JobsRetained),
          DateApproved = as.Date(DateApproved,
                                  "%m/%d/%Y"),
