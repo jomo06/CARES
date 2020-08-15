@@ -14,6 +14,7 @@ from io import BytesIO
 
 import pickle
 from googleapiclient.discovery import build
+from google.oauth2 import service_account
 
 from tqdm import tqdm
 # Make sure any previous runs of tqdm that were interrupted are cleared out
@@ -26,15 +27,32 @@ logging.basicConfig(level=logging.INFO, format=log_fmt)
 
 logger = logging.getLogger()
 
+def generate_creds_using_service_account(json_path):
+    '''
+    If using a service account with Google Drive, generate the
+    creds with the following methods. Doesn't use the pickling
+    paradigm below, but DOES require you to share the data folder
+    with the service account email explicitly, or else the
+    service account will have access to nothing in its drive.
+    '''
 
-def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.pickle', local_copy=None):
+    SCOPE = ['https://www.googleapis.com/auth/drive']
+
+    ## this is the JSON that was generated from the Google API
+    ## Console (see https://github.com/googleapis/google-api-python-client/blob/master/docs/oauth-server.md#creating-a-service-account)
+    SERVICE_ACCOUNT_FILE = 'python/auth_payload.json'
+
+    credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPE)
+
+
+def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.pickle', local_copy=None, service_account=False):
     '''
     Pulls down files from the DataKind NPF Google Drive
     then merges SBA PPP CSV files found into a single
     pandas DataFrame for further analysis.
 
     Fair warning: initial testing indicates that this will take
-    a little more than 8 minutes to complete. So save it locally to 
+    a little more than 8 minutes to complete. So save it locally to
     avoid downloading and stitching steps if you can.
 
 
@@ -58,16 +76,28 @@ def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.p
         for saving a local copy of the merged CSV file to avoid
         re-downloading it later.
 
+    service_account: boolean. This argument defaults to False.
+
+        If False, authenticating to Google Drive requires the
+        pickled token as described above.
+
+        If True, the path passed into the function should be the
+        filepath to a copy of the JSON generated when creating a
+        service account in the Google Developers Console.
 
     Returns
     -------
     pandas DataFrame with all of the raw PPP data loaded.
     '''
 
-    # Pull in our Google Drive creds
-    with open(google_drive_token_path, 'rb') as token:
-        creds = pickle.load(token)
-        
+    if service_account is True:
+        creds = generate_creds_using_service_account(google_drive_token_path)
+    else:
+        # Pull in our Google Drive creds
+        with open(google_drive_token_path, 'rb') as token:
+            creds = pickle.load(token)
+
+
     service = build('drive', 'v3', credentials=creds)
 
     # Find the info for All Data by State folder that contains raw PPP data
@@ -76,7 +106,7 @@ def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.p
 
     query = f"'{data_folder_info['id']}' in parents \
 and mimeType = 'application/vnd.google-apps.folder'"
-    
+
     data_subfolders = service.files().list(q = query).execute()\
     .get('files', [])
 
@@ -96,24 +126,24 @@ and mimeType = 'application/vnd.google-apps.folder'"
     query +=  "and mimeType = 'text/csv'"
 
     # Get all CSV file IDs from data subfolders as a list of ByteStrings
-    data_file_ids = service.files().list(q = query).execute().get('files', []) 
+    data_file_ids = service.files().list(q = query).execute().get('files', [])
 
-    # Pull and concatenate all ByteStrings, skipping headers, 
+    # Pull and concatenate all ByteStrings, skipping headers,
     # and decode into single DataFrame for further analysis
-    # Note that this would be more efficient long-term to ZIP all CSVs into one file 
+    # Note that this would be more efficient long-term to ZIP all CSVs into one file
     # and then pull that down alone
     for i, file in enumerate(tqdm(data_file_ids)):
         if i == 0:
             data_str = service.files()\
             .get_media(fileId=file['id'])\
             .execute()
-            
+
         # just concatenating here, without header, since we already have it
         else:
             temp_data_str = service.files()\
             .get_media(fileId=file['id'])\
             .execute()
-            
+
             # Assuming here that header is the same across files and thus we can skip it
             # Find end of header by finding first newline character
             data_start_index = temp_data_str.find(b"\n") + 1
@@ -126,8 +156,8 @@ and mimeType = 'application/vnd.google-apps.folder'"
     # Decode ByteString into something that pandas can make a DataFrame out of
     data = data_str.decode('utf8').encode('latin-1')
 
-    # Likely will return error/warning due to mixed dtypes and suggest 
-    # making low_memory=False, but that will cause OOM errors 
+    # Likely will return error/warning due to mixed dtypes and suggest
+    # making low_memory=False, but that will cause OOM errors
     # that shutdown python kernel...
     df = pd.read_csv(BytesIO(data), encoding='latin-1', low_memory=True)
 
@@ -139,15 +169,15 @@ and mimeType = 'application/vnd.google-apps.folder'"
 
 
 def transpose_columns(
-    df, 
+    df,
     rows_affected=None,
-    columns_to_freeze=None, 
-    columns_to_move=None, 
+    columns_to_freeze=None,
+    columns_to_move=None,
     transposition_distance=0
     ):
     '''
     Moves whole columns from one position to another, as a group.
-    Useful when you find that there's a pattern wherein a bunch of columns 
+    Useful when you find that there's a pattern wherein a bunch of columns
     were off by 1/2/3/etc. from the column they were supposed to be in.
 
 
@@ -159,11 +189,11 @@ def transpose_columns(
         should be shifted, with the rest being left alone.
 
     columns_to_freeze: list of str containing the names of the columns that
-        shouldn't be transposed. All other columns not in this list will be 
+        shouldn't be transposed. All other columns not in this list will be
         moved. If this is None, ``columns_to_move`` should not be None.
 
     columns_to_move: list of str containing the names of the columns that
-        should be transposed. All other columns will be left alone. If this is 
+        should be transposed. All other columns will be left alone. If this is
         None, ``columns_to_freeze`` should not be None.
 
     transposition_distance: int. Indicates how many columns to the right
@@ -177,23 +207,23 @@ def transpose_columns(
 please only set one.")
 
     elif columns_to_freeze:
-        output.loc[rows_affected, 
+        output.loc[rows_affected,
         output.columns.drop(columns_to_freeze)] = \
-        output.loc[rows_affected, 
+        output.loc[rows_affected,
         output.columns.drop(columns_to_freeze)]\
         .shift(periods=transposition_distance, axis='columns')
 
     elif columns_to_move:
-        output.loc[rows_affected, 
+        output.loc[rows_affected,
         columns_to_move] = \
-        output.loc[rows_affected, 
+        output.loc[rows_affected,
         columns_to_move]\
         .shift(periods=transposition_distance, axis='columns')
 
     else:
         logger.warn("No values set for columns_to_freeze or columns_to_move, \
 so no transposition performed.")
-        
+
     return output
 
 
@@ -226,7 +256,7 @@ loans have a numeric State value")
     output = transpose_columns(
         df,
         rows_affected=numeric_states_index,
-        columns_to_freeze='LoanRange', 
+        columns_to_freeze='LoanRange',
         transposition_distance=2
         )
 
@@ -283,6 +313,6 @@ merged data will be stored. Make sure it is a named *.csv file.')
 
     args = vars(parser.parse_args())
 
-    
+
 
     main(args['google_drive_token_path'], args['local_copy'])
