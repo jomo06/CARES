@@ -11,3 +11,4 @@ data/tidy_data/
 # Python stuff
 python/data
 python/secure_keys
+src.egg-info/
