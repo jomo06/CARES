@@ -12,7 +12,7 @@ library(tidyverse)
 library(lubridate)
 library(knitr)
 library(stringdist) # for fuzzy matching
-
+library(tidyr)
 # Summaries ---------------------------------------------------------------
 
 glimpse(adbs)
@@ -58,14 +58,14 @@ sample(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", uszips$zip))]), 5) # this
 
 #Data Validation: Zip --------------------------------------------------------------
 #True indicates entry is a valid zip, i.e. it exists in the zip-reference list
-adbs <- adbs %>% mutate(ValidZip = case_when(
-  is.na(Zip) ~ "No Entry",
-  Zip %in% sprintf("%05d", uszips$zip) ~ "True",
-  !Zip %in% sprintf("%05d", uszips$zip) ~ "Fail"))
+adbs <- adbs %>% mutate(ValidZip_uszips = case_when(
+  is.na(Zip) ~ NA,
+  Zip %in% sprintf("%05d", uszips$zip) ~ TRUE,
+  !Zip %in% sprintf("%05d", uszips$zip) ~ FALSE))
 
-table(adbs$ValidZip, useNA = "always")
+table(adbs$ValidZip_uszips, useNA = "always")
 
-
+###
 # instead let's use the file 'zip_to_zcta_2019.csv' and see if we get better coverage
 ztz <- read.csv("data/Lookup Tables/zip_to_zcta_2019.csv")
 
@@ -73,6 +73,60 @@ length(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", ztz$ZIP_CODE))])            # 1,
 length(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", ztz$ZIP_CODE))]))    # 331 unique unmatched zips
 sample(unique(adbs$Zip[(!adbs$Zip %in% sprintf("%05d", ztz$ZIP_CODE))]), 5) # this sampling does not seem to be all valid zips!
 # we appear to be much closer using this list
+
+adbs <- adbs %>% mutate(ValidZip_ztz = case_when(
+  is.na(Zip) ~ NA,
+  Zip %in% sprintf("%05d", ztz$ZIP_CODE) ~ TRUE,
+  !Zip %in% sprintf("%05d", ztz$ZIP_CODE) ~ FALSE))
+table(adbs$ValidZip_ztz, useNA = "always")
+
+#There are zipcodes in the 'uscities' file that are not in the zips file:
+uscities <- read.csv("./data/simplemaps_uscities_basicv1.6/uscities.csv")
+#one city can have multiple zip entries, but in 1 row. Expend to multiple rows:
+uscities_expanded = separate_rows(uscities, zips,sep=" ")
+uscities_expanded$zips <- as.numeric(as.character(uscities_expanded$zips)) #for consistency
+#True indicates entry is a valid zip, i.e. it exists in the zip-reference list
+adbs <- adbs %>% mutate(ValidZip_uscities = case_when(
+  is.na(Zip) ~ NA,
+  Zip %in% sprintf("%05d", uscities_expanded$zips) ~ TRUE,
+  !Zip %in% sprintf("%05d", uscities_expanded$zips) ~ FALSE))
+
+table(adbs$ValidZip_uscities, useNA = "always")
+
+
+
+#How about zipcodedemographics file?
+#Are the new validated zips, in the zipdemo file?
+zip_demo <- read.csv("data/demographics/zipcodeDemographics.csv")
+
+validzips_ztzfile_only = adbs$Zip[(adbs$Zip %in% sprintf("%05d", ztz$ZIP_CODE)) & !(adbs$Zip %in% sprintf("%05d", uszips$zip))]
+validzipsfromztz_hasdemo = sum(validzips_ztzfile_only %in% sprintf("%05d", zip_demo$GEOID))
+
+cat(sprintf('%s unique ppp zips are listed in zip_to_zcta file that are not in the uszips file, 
+covering %s rows in ppp file. However, %s of these zipcode are in the demo file.', 
+            length(unique(validzips_ztzfile_only)) , length(validzips_ztzfile_only), validzipsfromztz_hasdemo))
+
+validzips_uscitiesfile_only = adbs$Zip[(adbs$Zip %in% sprintf("%05d", uscities_expanded$zips)) & !(adbs$Zip %in% sprintf("%05d", uszips$zip))]
+validzipfromcity_hasdemo = sum(validzips_uscitiesfile_only %in% sprintf("%05d", zip_demo$GEOID))
+
+cat(sprintf('%s unique ppp zips are listed in uscities_zips file that are not in the uszips file, 
+covering %s rows in ppp file. However, %s of these zipcode are in the demo file.', 
+length(unique(validzips_uscitiesfile_only)) , length(validzips_uscitiesfile_only), validzipfromcity_hasdemo))
+
+#Add a Valid column and a hasdemo column:
+adbs$ValidZip = adbs$ValidZip_uszips | adbs$ValidZip_ztz | adbs$ValidZip_uscities
+table(adbs$ValidZip, useNA = "always")  
+
+#hasdemo is essentiall column, but actually creating for correctness:
+adbs <- adbs %>% mutate(ValidZip_hasdemo = case_when(
+  is.na(Zip) ~ NA,
+  Zip %in% sprintf("%05d", zip_demo$GEOID) ~ TRUE,
+  !Zip %in% sprintf("%05d", zip_demo$GEOID) ~ FALSE))
+
+#assert("Zips from files other than uszips.csv have demographic information", check:
+sum(!is.na(adbs$ValidZip_hasdemo == adbs$ValidZip_uszips)) == length(adbs$ValidZip_hasdemo) - sum(is.na(adbs$ValidZip_hasdemo == adbs$ValidZip_uszips))
+
+
 
 ### Data Check: State Names -----------------------------------------------
 # check against US Census data: American National Standards Institute (ANSI) Codes for States, the District of Columbia, Puerto Rico, and the Insular Areas of the United States
@@ -86,16 +140,18 @@ adbs[adbs$State == "AE",] # when viewing ZIP, Lending data, this does indeed app
 
 # Impute Missing Fields: state --------------------------------------------------------------
 # Impute missing state by zipcode. Here, we do not check if city and zipcode match
+adbs$ImputedState = adbs$State
 cat(sprintf("%s missing states", nrow(adbs[adbs$ImputedState=='XX',])))
 XXstate_zip = adbs[(adbs$State=='XX' & !is.na(adbs$Zip)),]$Zip
 XXstate_city = adbs[(adbs$State=='XX' & !is.na(adbs$Zip)),]$City
-cat(sprintf("%s missing states, with zip entry", length(XXstate_zips)))
+cat(sprintf("%s missing states, with zip entry", length(XXstate_zip)))
 
 
-adbs$ImputedState =adbs$State
 imputed_states = c()
+imputed_states2 = c()
 missing_zips = c()
 for (zip in XXstate_zip){
+  
   state = uszips[uszips$zip==zip,]$state_id
 
   if (identical(state, character(0))){
@@ -103,16 +159,17 @@ for (zip in XXstate_zip){
     missing_zips = c(missing_zips, zip)}
   imputed_states=c(imputed_states, state)
 }
+imputed_states
 
 adbs[which(adbs$ImputedState=='XX' & !is.na(adbs$Zip)), arr.ind=TRUE]$ImputedState = imputed_states
 
-cat(sprintf("out of the %s missing states that had zip entry, %s states imputed from zipcodes, %s zipcodes not found in 'uszips' file", length(impute_zips), (length(imputed_states) - length(missing_zips)),length(missing_zips)))
+
+cat(sprintf("out of the %s missing states that had zip entry, %s states imputed from zipcodes, %s zipcodes not found in 'uszips' file", length(imputed_states), (length(imputed_states) - length(missing_zips)),length(missing_zips)))
 
 
 
 ### Data Check: City Names -------------------------------------------------
 # check City values against a large list of likely names, via: https://simplemaps.com/data/us-cities
-uscities <- read.csv("./data/simplemaps_uscities_basicv1.6/uscities.csv")
 
 citydict <- sort(unique(tolower(gsub("[[:digit:][:space:][:punct:]]", "", uscities$city))))
 adbscities <- sort(unique(tolower(gsub("[[:digit:][:space:][:punct:]]", "", adbs$City))))
@@ -150,7 +207,12 @@ adbs <- adbs %>% mutate(ValidCity = case_when(
 table(adbs$ValidCity, useNA = "always")
 
 
+#Data Validation: (City, Zip) match --------------------------------------------------------------
+#From the Quartz article: The zipcode listed for a loan in ... San Diege has the zipcode of Pasadena. 
+#Are there more entries with mismatches between (City, Zip)?
+#Reference used is "./data/simplemaps_uscities_basicv1.6/uscities.csv"
 
+#Check to see that all setdiff(uscities$zips, uszips$zip) = 0 
 
 
 ### Data Check: Jobs Retained ----------------------------------------------
