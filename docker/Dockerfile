@@ -25,7 +25,7 @@ USER jovyan
 WORKDIR /home/jovyan/work/
 
 # Copy everything from current working directory into WORKDIR in container
-# Only really need setup.py, src/, and environment.yml, but this is easier
+# Only really need setup.py, src/, and environment.yml
 COPY environment.yml .
 COPY setup.py .
 COPY src .
