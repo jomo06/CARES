@@ -26,6 +26,7 @@ dependencies:
   - click=7.1.2=pyh9f0ad1d_0
   - cloudpickle=1.4.1=py_0
   - conda=4.8.2=py37_0
+  - conda-build=3.19.2=py37hc8dfbb8_3
   - conda-package-handling=1.6.0=py37h8f50634_2
   - configurable-http-proxy=4.2.1=node13_he01fd0c_0
   - cryptography=2.9.2=py37hb09aad4_0
@@ -40,8 +41,10 @@ dependencies:
   - distributed=2.18.0=py37hc8dfbb8_0
   - entrypoints=0.3=py37hc8dfbb8_1001
   - fastcache=1.1.0=py37h8f50634_1
+  - filelock=3.0.12=pyh9f0ad1d_0
   - freetype=2.10.2=he06d7ca_0
   - fsspec=0.7.4=py_0
+  - glob2=0.7=py_0
   - gmp=6.2.0=he1b5a44_2
   - gmpy2=2.1.0b1=py37h04dde30_0
   - google-api-core=1.17.0=py37hc8dfbb8_0
@@ -79,6 +82,7 @@ dependencies:
   - kiwisolver=1.2.0=py37h99015e2_0
   - krb5=1.17.1=h2fd8d38_0
   - ld_impl_linux-64=2.34=h53a641e_5
+  - libarchive=3.3.3=h3a8160c_1008
   - libblas=3.8.0=14_openblas
   - libcblas=3.8.0=14_openblas
   - libcurl=7.69.1=hf7181ac_0
@@ -87,8 +91,10 @@ dependencies:
   - libgcc-ng=9.2.0=h24d8f2e_2
   - libgfortran-ng=7.5.0=hdf63c60_6
   - libgomp=9.2.0=h24d8f2e_2
+  - libiconv=1.15=h516909a_1006
   - liblapack=3.8.0=14_openblas
   - liblapacke=3.8.0=14_openblas
+  - liblief=0.10.1=he1b5a44_0
   - libllvm8=8.0.1=hc9558a2_0
   - libopenblas=0.3.7=h5ec1e0e_6
   - libpng=1.6.37=hed695b0_1
@@ -99,6 +105,7 @@ dependencies:
   - libtiff=4.1.0=hc7e4089_6
   - libuv=1.34.0=h516909a_0
   - libwebp-base=1.1.0=h516909a_3
+  - libxml2=2.9.10=hee79883_0
   - llvmlite=0.31.0=py37h5202443_1
   - locket=0.2.0=py_2
   - lz4-c=1.9.2=he1b5a44_1
@@ -131,17 +138,20 @@ dependencies:
   - pandocfilters=1.4.2=py_1
   - parso=0.7.0=pyh9f0ad1d_0
   - partd=1.1.0=py_0
+  - patchelf=0.11=he1b5a44_0
   - patsy=0.5.1=py_0
   - pexpect=4.8.0=py37hc8dfbb8_1
   - pickleshare=0.7.5=py37hc8dfbb8_1001
   - pillow=7.1.2=py37h718be6c_0
   - pip=20.1.1=py_1
+  - pkginfo=1.5.0.1=py_0
   - plotly=4.9.0=pyh9f0ad1d_0
   - prometheus_client=0.8.0=pyh9f0ad1d_0
   - prompt-toolkit=3.0.5=py_0
   - protobuf=3.11.4=py37h3340039_1
   - psutil=5.7.0=py37h8f50634_1
   - ptyprocess=0.6.0=py_1001
+  - py-lief=0.10.1=py37h3340039_0
   - pyasn1=0.4.8=py_0
   - pycosat=0.6.3=py37h8f50634_1004
   - pycparser=2.20=py_0
@@ -155,8 +165,10 @@ dependencies:
   - pytables=3.6.1=py37h9f153d1_1
   - python=3.7.6=cpython_h8356626_6
   - python-dateutil=2.8.1=py_0
+  - python-dotenv=0.14.0=pyh9f0ad1d_0
   - python-editor=1.0.4=py_0
   - python-json-logger=0.1.11=py_0
+  - python-libarchive-c=2.9=py37_0
   - python_abi=3.7=1_cp37m
   - pytz=2020.1=pyh9f0ad1d_0
   - pywavelets=1.1.1=py37h03ebfcd_1
@@ -166,6 +178,7 @@ dependencies:
   - requests=2.24.0=pyh9f0ad1d_0
   - requests-oauthlib=1.3.0=pyh9f0ad1d_0
   - retrying=1.3.3=py_2
+  - ripgrep=12.1.1=h516909a_0
   - rsa=4.6=pyh9f0ad1d_0
   - ruamel.yaml=0.16.6=py37h8f50634_1
   - ruamel.yaml.clib=0.2.0=py37h8f50634_1
@@ -222,6 +235,7 @@ dependencies:
     - markdown==3.2.2
     - opt-einsum==3.2.1
     - pyasn1-modules==0.2.8
+    - src==0.1.0
     - tensorboard==2.2.2
     - tensorboard-plugin-wit==1.6.0.post3
     - tensorflow==2.2.0
