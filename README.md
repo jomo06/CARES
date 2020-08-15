@@ -4,6 +4,18 @@ CARES Act data: PPP, EIDL and more.
 
 Data files can be downloaded from the [DataKind Google Drive](https://drive.google.com/drive/folders/1oGw8sobXw4PC_SNQ9AcfCuR8RBu-te2o?usp=sharing)
 
+## TOC
+
+1. [Contributing.](#cont)
+2. [Directory Structure.](#dir)
+3. [Data Sources.](#data)
+4. [PPP Data Dictionary](#ppp)
+5. [Enhancements](#enh)
+
+---
+
+<a name="cont"/>
+
 ## Contributing
 
 Please either [fork](https://docs.github.com/en/enterprise/2.20/user/github/getting-started-with-github/fork-a-repo) or [make a development branch](https://thenewstack.io/dont-mess-with-the-master-working-with-branches-in-git-and-github/) of the repo to contribute.
@@ -12,11 +24,14 @@ Please ask a fellow volunteer to review your code with a [pull request](https://
 or [@kbmorales](https://github.com/kbmorales) if you don't know who to ask to
 review!
 
+<a name="dir"/>
+
 ## Directory Structure
 
-- `bin/` for in production executable files (like reading in the PPP data)
+- `bin/` for in production executable files
+  - `bin/pull_data.R` authenticates with Google Drive, downloads PPP flat files
+  - `bin/ppp_data_merge.R` reads in PPP flat files
 - `code/` folder with individual project subfolders on the CARES act data. 
-This is so if we eventually want to make a package, it's set up for one. 
 Enhancements people make can go here, grouped by "project". A project is any 
 discreet enhancement to the data, like adding in NAICS code industry 
 identifiers. All projects should be documented in the README. 
@@ -34,11 +49,15 @@ Please cite sources in the README!
 All finalized code should be able to be run on the output of the setup scripts
 in `bin/`, or on a dataset read in as a CSV file created by cleaning code.
 
+<a name="data"/>
+
 ## Data Sources
 
 - PPP Loan Data: [Small Business Administration's DropBox](https://sba.app.box.com/s/tvb0v5i57oa8gc6b5dcm9cyw7y2ms6pp)
 - NAICS code dictionary [US Census NAICS Files](https://www.census.gov/eos/www/naics/downloadables/downloadables.html)
 - [Data catlog of other sources](https://docs.google.com/spreadsheets/d/1d3wVJTFg3zjTVyjzy8hADxxTp1q5rDVbRKDJ6WyyNZk/edit#gid=0) assembled by Dave RM
+
+<a name="ppp"/>
 
 ## PPP Data Dictionary
 
@@ -130,6 +149,10 @@ contains some improbable values, and many values are Zero:
 
 Most of the data are "Not Answered" due to these questions being optional.
 
+<a name="enh"/>
+
+## Enhancements
+
 ### NAICS Codes
 
-TO DO - @kbmorales
+Adds NAICS industry identifiers to the PPP data. See the [notebook](docs/naics/naics.ipynb)
