@@ -161,7 +161,7 @@ for (zip in XXstate_zip){
 }
 imputed_states
 
-adbs[which(adbs$ImputedState=='XX' & !is.na(adbs$Zip)), arr.ind=TRUE]$ImputedState = imputed_states
+adbs$ImputedState[(adbs$ImputedState=='XX' & !is.na(adbs$Zip))] = imputed_states
 
 
 cat(sprintf("out of the %s missing states that had zip entry, %s states imputed from zipcodes, %s zipcodes not found in 'uszips' file", length(imputed_states), (length(imputed_states) - length(missing_zips)),length(missing_zips)))
@@ -244,7 +244,6 @@ table(adbs$DateApproved, useNA="always")
 # 4353 exact duplicates
 
 # adbs_dupes=adbs[duplicated(adbs),]
-
 
 
 
