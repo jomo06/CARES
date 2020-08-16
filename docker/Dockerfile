@@ -40,14 +40,14 @@ RUN conda install plotly=4.9.0 ipywidgets=7.5.1 nb_conda_kernels=2.2.3 nbdime=2.
 # Install my favorite JupyterLab extensions
 RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager \
 @jupyterlab/toc \
-@ryantam626/jupyterlab_code_formatter 
+@ryantam626/jupyterlab_code_formatter@1.3.6
 
 #TODO: get plotly ext to install w/o requiring new build on container launch
 RUN jupyter labextension install jupyterlab-plotly --no-build
 #RUN jupyter labextension install jupyterlab-plotly@4.9.0
 
 # Finish off the code formatter extension install
-RUN conda install -c conda-forge -y jupyterlab_code_formatter=1.3.5 -y
+RUN conda install -c conda-forge -y jupyterlab_code_formatter=1.3.6 -y
 RUN jupyter serverextension enable --py jupyterlab_code_formatter
 RUN conda install autopep8=1.5.3 -y
 
