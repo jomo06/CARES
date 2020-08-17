@@ -138,6 +138,59 @@ and mimeType = 'application/vnd.google-apps.folder'"
     return df
 
 
+def flag_data_issues_and_fixes(df, rows_affected, issue_name, fixed=False):
+    '''
+    When a data quality issue is found, this will add a column
+    to the input DataFrame named '<issue_name>_Problem' and fill it
+    with 1s for the rows that are impacted and 0s for those that are not. 
+    It will also optionally add a column called '<issue_name>_Problem_Fixed'
+    that will have 1s for the rows that have been corrected for this issue.
+
+
+    Parameters
+    ----------
+    df: pandas DataFrame with the improperly transposed columns data.
+
+    rows_affected: pandas Index object or list. Indicates the rows in ``df`` 
+        that should be shifted, with the rest being left alone.
+
+    issue_name: str. The (concise) name of the data problem you're flagging.
+        Should be very short like "StateCol_Transposition" at the longest.
+
+    fixed: bool. If True, an additional column is added to indicate that 
+        all of the affected rows were corrected. This column will also be 
+        binary.
+
+
+    Returns
+    -------
+    A copy of the input DataFrame with the extra column(s) for flagging issues/
+    solutions.
+    '''
+
+    output = df.copy()
+
+    problem_string = f"{issue_name}_Problem"
+
+    # Mark all rows that had this issue with 1
+    output.loc[rows_affected, problem_string] = 1
+
+    # For any rows unaffected, set problem flag to 0 instead of null
+    output.fillna({problem_string: 0}, inplace=True)
+    output[problem_string] = output[problem_string].astype(int)
+
+    if fixed:
+        # Mark all rows that had this issue with 1
+        output.loc[rows_affected, problem_string + "_Fixed"] = 1
+
+        # For any rows unaffected, set problem flag to 0 instead of null
+        output.fillna({problem_string + "_Fixed": 0}, inplace=True)
+        output[problem_string + "_Fixed"] = output[problem_string + "_Fixed"]\
+        .astype(int)
+
+    return output
+
+
 def transpose_columns(
     df, 
     rows_affected=None,
@@ -155,8 +208,8 @@ def transpose_columns(
     ----------
     df: pandas DataFrame with the improperly transposed columns data.
 
-    rows_affected: pandas Index object. Indicates the rows in ``df`` that
-        should be shifted, with the rest being left alone.
+    rows_affected: pandas Index object or list. Indicates the rows in ``df`` 
+        that should be shifted, with the rest being left alone.
 
     columns_to_freeze: list of str containing the names of the columns that
         shouldn't be transposed. All other columns not in this list will be 
@@ -168,6 +221,12 @@ def transpose_columns(
 
     transposition_distance: int. Indicates how many columns to the right
         (if positive) or left (if negative) to move the columns.
+
+
+    Returns
+    -------
+    A copy of the input DataFrame with the flagged rows transposed by the
+    indicated number of columns.
     '''
 
     output = df.copy()
@@ -229,6 +288,12 @@ loans have a numeric State value")
         columns_to_freeze='LoanRange', 
         transposition_distance=2
         )
+
+    output = flag_data_issues_and_fixes(output, numeric_states_index, 
+        issue_name="StateCol_Transposition", 
+        fixed=True)
+
+    # Flag the rows that were impacted
 
     logger.info("Note that 'AE' is an abbreviation for the 'state' of \
 Armed Forces - Europe. It's valid.")
