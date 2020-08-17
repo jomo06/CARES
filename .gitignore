@@ -12,3 +12,4 @@ data/tidy_data/
 python/data
 python/secure_keys
 src.egg-info/
+__pycache__/

@@ -10,6 +10,8 @@ import numpy as np
 import datetime as dt
 import pytz
 
+from copy import deepcopy
+
 from io import BytesIO
 
 import pickle
@@ -231,15 +233,28 @@ def transpose_columns(
 
     output = df.copy()
 
-    if columns_to_freeze and columns_to_move:
+
+    problem_fix_columns = df.columns[df.columns.str.contains("_Problem")]
+    frozen_columns = deepcopy(columns_to_freeze)
+
+    # Check that our problem and fix flag columns aren't transposed ever
+    if frozen_columns is not None:
+        # Check if all problem/fix columns are included
+        # If not, add them in
+        for column in problem_fix_columns:
+            if column not in frozen_columns:
+                frozen_columns.append(column)
+
+
+    if frozen_columns and columns_to_move:
         raise ValueError("columns_to_freeze and columns_to_move are both set, \
 please only set one.")
 
-    elif columns_to_freeze:
+    elif frozen_columns:
         output.loc[rows_affected, 
-        output.columns.drop(columns_to_freeze)] = \
+        output.columns.drop(frozen_columns)] = \
         output.loc[rows_affected, 
-        output.columns.drop(columns_to_freeze)]\
+        output.columns.drop(frozen_columns)]\
         .shift(periods=transposition_distance, axis='columns')
 
     elif columns_to_move:
@@ -285,7 +300,7 @@ loans have a numeric State value")
     output = transpose_columns(
         df,
         rows_affected=numeric_states_index,
-        columns_to_freeze='LoanRange', 
+        columns_to_freeze=['LoanRange'], 
         transposition_distance=2
         )
 
