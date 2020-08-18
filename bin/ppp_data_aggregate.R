@@ -52,4 +52,6 @@ adbs_zcta<-zcta_demo%>%
            pctile_MidPerCap_lt150k=ntile(MidPerCap_lt150k,100),
            pctile_CntPerCap_ge150k=ntile(CntPerCap_ge150k,100))
 
-### Aggregate by ZCTA -----------------------------------------
+### Aggregate by Congressional District ---------------------
+    
+### Aggregate by County -------------------------------------
