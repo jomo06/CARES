@@ -76,3 +76,48 @@ adbs %>%
   labs(x = "",
        y = "Count") +
   theme_minimal()
+
+adbs %>% 
+  group_by(naics_lvl_1) %>% 
+  filter(!str_detect(LoanRange_Unified,
+                    "^l|^m|^n|^o|^p")) %>% 
+  count(LoanRange_Unified) %>% 
+  na.omit() %>% 
+  ggplot(aes(x = LoanRange_Unified,
+             y = n,
+             fill = LoanRange_Unified)) +
+  geom_col() +
+  facet_wrap(~naics_lvl_1,
+             nrow = 5) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position = 'none') +
+  labs(x = "Loan Range",
+       y = "# of Loans") +
+  scale_fill_viridis_d()
+
+# No orgs in the f or higher loanrange?
+
+adbs %>% 
+  filter(is.na(naics_lvl_1)) %>% 
+  mutate(DateApproved = as.Date(DateApproved,
+                                format="%m/%d/%Y")) %>% 
+  group_by(DateApproved) %>% 
+  count(NAICSCode) %>% 
+  # count(DateApproved) %>% 
+  ggplot(aes(x = DateApproved,
+             y = n,
+             fill = NAICSCode)) +
+  geom_area() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "week",
+               date_minor_breaks = "day") +
+  theme(legend.position = c(0.8,0.8),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)
+        ) +
+  labs(x = "",
+       y = "# of Loans",
+       title = "Loans with a missing or 999990 NAICS Code")
+
+# NAICS over time
+

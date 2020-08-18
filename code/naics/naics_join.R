@@ -7,8 +7,14 @@
 
 # Setup -------------------------------------------------------------------
 
+library(tidyverse)
+
 # Cleans NAICS data prior to joining
-# source(file.path("code","naics","naics_clean.R"))
+source(file.path("code","naics","naics_clean.R"))
+
+# OR Read in naics data
+# naics_df = read_csv(here::here("data", "tidy_data",
+#                             "naics_clean.csv"))
 
 # Handle bad NAICS ---------------------------------------------------------
 
@@ -16,7 +22,7 @@
 # 2017 NAICS code
 
 naics_fails = adbs %>% 
-  anti_join(naics_df) %>% 
+  anti_join(naics_df, by = "NAICSCode") %>% 
   filter(!is.na(NAICSCode)) %>% 
   pull(NAICSCode) %>% 
   unique() %>% 
@@ -43,13 +49,12 @@ naics_df = naics_df %>%
 adbs = adbs %>% 
   left_join(naics_df)
 
-
 # Write -------------------------------------------------------------------
 
 write_csv(adbs,
-          "data/tidy_data/adbs_naics.csv")
+          here::here("data", "tidy_data",
+                     "adbs_naics.csv"))
 
 # Cleanup -----------------------------------------------------------------
 
 rm(bad_naics, naics_2L, naics_fails)
-

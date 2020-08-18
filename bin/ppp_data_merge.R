@@ -24,7 +24,6 @@ adbs <- map_df(csv_files, ~read_csv(.x, col_types = cols(.default = "c")) %>%
                   mutate(source_file = str_remove_all(.x, ".*/"))
                )
 
-
 ### Clean -------------------------------------------------------------------
 
 # Create unified Loan Amount / Loan Range cuts
