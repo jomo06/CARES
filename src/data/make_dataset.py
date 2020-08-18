@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import argparse
 import click
 import logging
 from pathlib import Path
@@ -21,7 +22,6 @@ from tqdm import tqdm
 # Make sure any previous runs of tqdm that were interrupted are cleared out
 getattr(tqdm, '_instances', {}).clear()
 
-import argparse
 
 log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(level=logging.INFO, format=log_fmt)
@@ -69,18 +69,18 @@ def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.p
     # Pull in our Google Drive creds
     with open(google_drive_token_path, 'rb') as token:
         creds = pickle.load(token)
-        
+
     service = build('drive', 'v3', credentials=creds)
 
     # Find the info for All Data by State folder that contains raw PPP data
-    data_folder_info = service.files().list(q = "name = 'All Data by State'")\
-    .execute().get('files', [])[0]
+    data_folder_info = service.files().list(q="name = 'All Data by State'")\
+        .execute().get('files', [])[0]
 
     query = f"'{data_folder_info['id']}' in parents \
 and mimeType = 'application/vnd.google-apps.folder'"
-    
-    data_subfolders = service.files().list(q = query).execute()\
-    .get('files', [])
+
+    data_subfolders = service.files().list(q=query).execute()\
+        .get('files', [])
 
     # Find all CSV files in the child folders
     data_subfolder_ids = []
@@ -89,33 +89,33 @@ and mimeType = 'application/vnd.google-apps.folder'"
     for subfolder in data_subfolders:
         data_subfolder_ids.append(subfolder['id'])
 
-    query = " in parents or ".join([f"'{folder_id}'" \
-        for folder_id in data_subfolder_ids])
+    query = " in parents or ".join([f"'{folder_id}'"
+                                    for folder_id in data_subfolder_ids])
     query += " in parents"
 
     # Guarantee OR statements are evaluated together first, then AND
     query = f"({query})"
-    query +=  "and mimeType = 'text/csv'"
+    query += "and mimeType = 'text/csv'"
 
     # Get all CSV file IDs from data subfolders as a list of ByteStrings
-    data_file_ids = service.files().list(q = query).execute().get('files', []) 
+    data_file_ids = service.files().list(q=query).execute().get('files', [])
 
-    # Pull and concatenate all ByteStrings, skipping headers, 
+    # Pull and concatenate all ByteStrings, skipping headers,
     # and decode into single DataFrame for further analysis
-    # Note that this would be more efficient long-term to ZIP all CSVs into one file 
+    # Note that this would be more efficient long-term to ZIP all CSVs into one file
     # and then pull that down alone
     for i, file in enumerate(tqdm(data_file_ids)):
         if i == 0:
             data_str = service.files()\
-            .get_media(fileId=file['id'])\
-            .execute()
-            
+                .get_media(fileId=file['id'])\
+                .execute()
+
         # just concatenating here, without header, since we already have it
         else:
             temp_data_str = service.files()\
-            .get_media(fileId=file['id'])\
-            .execute()
-            
+                .get_media(fileId=file['id'])\
+                .execute()
+
             # Assuming here that header is the same across files and thus we can skip it
             # Find end of header by finding first newline character
             data_start_index = temp_data_str.find(b"\n") + 1
@@ -128,14 +128,13 @@ and mimeType = 'application/vnd.google-apps.folder'"
     # Decode ByteString into something that pandas can make a DataFrame out of
     data = data_str.decode('utf8').encode('latin-1')
 
-    # Likely will return error/warning due to mixed dtypes and suggest 
-    # making low_memory=False, but that will cause OOM errors 
+    # Likely will return error/warning due to mixed dtypes and suggest
+    # making low_memory=False, but that will cause OOM errors
     # that shutdown python kernel...
     df = pd.read_csv(BytesIO(data), encoding='latin-1', low_memory=True)
 
     if local_copy is not None:
         df.to_csv(local_copy, index=False)
-
 
     return df
 
@@ -188,18 +187,18 @@ def flag_data_issues_and_fixes(df, rows_affected, issue_name, fixed=False):
         # For any rows unaffected, set problem flag to 0 instead of null
         output.fillna({problem_string + "_Fixed": 0}, inplace=True)
         output[problem_string + "_Fixed"] = output[problem_string + "_Fixed"]\
-        .astype(int)
+            .astype(int)
 
     return output
 
 
 def transpose_columns(
-    df, 
+    df,
     rows_affected=None,
-    columns_to_freeze=None, 
-    columns_to_move=None, 
+    columns_to_freeze=None,
+    columns_to_move=None,
     transposition_distance=0
-    ):
+):
     '''
     Moves whole columns from one position to another, as a group.
     Useful when you find that there's a pattern wherein a bunch of columns 
@@ -233,7 +232,6 @@ def transpose_columns(
 
     output = df.copy()
 
-
     problem_fix_columns = df.columns[df.columns.str.contains("_Problem")]
     frozen_columns = deepcopy(columns_to_freeze)
 
@@ -245,29 +243,28 @@ def transpose_columns(
             if column not in frozen_columns:
                 frozen_columns.append(column)
 
-
     if frozen_columns and columns_to_move:
         raise ValueError("columns_to_freeze and columns_to_move are both set, \
 please only set one.")
 
     elif frozen_columns:
-        output.loc[rows_affected, 
-        output.columns.drop(frozen_columns)] = \
-        output.loc[rows_affected, 
-        output.columns.drop(frozen_columns)]\
-        .shift(periods=transposition_distance, axis='columns')
+        output.loc[rows_affected,
+                   output.columns.drop(frozen_columns)] = \
+            output.loc[rows_affected,
+                       output.columns.drop(frozen_columns)]\
+            .shift(periods=transposition_distance, axis='columns')
 
     elif columns_to_move:
-        output.loc[rows_affected, 
-        columns_to_move] = \
-        output.loc[rows_affected, 
-        columns_to_move]\
-        .shift(periods=transposition_distance, axis='columns')
+        output.loc[rows_affected,
+                   columns_to_move] = \
+            output.loc[rows_affected,
+                       columns_to_move]\
+            .shift(periods=transposition_distance, axis='columns')
 
     else:
         logger.warn("No values set for columns_to_freeze or columns_to_move, \
 so no transposition performed.")
-        
+
     return output
 
 
@@ -290,25 +287,25 @@ def clean_ppp_data(df):
     # Find rows where State column is numeric or is a string with numeric chars
     tqdm.pandas(desc="Finding the rows in which numeric values exist for the \
 State column...")
-    numeric_states_index = df[(df['State'].progress_apply(np.isreal)) | \
-    (df['State'].str.isnumeric())].index
+    numeric_states_index = df[(df['State'].progress_apply(np.isreal)) |
+                              (df['State'].str.isnumeric())].index
 
     logger.info(f"{(len(numeric_states_index) / len(df)) * 100}% of the \
-loans have a numeric State value")
+loans have a numeric State value. This will be corrected.")
 
     # Transpose columns by 2 to the right when State is numeric
     output = transpose_columns(
         df,
         rows_affected=numeric_states_index,
-        columns_to_freeze=['LoanRange'], 
+        columns_to_freeze=['LoanRange'],
         transposition_distance=2
-        )
-
-    output = flag_data_issues_and_fixes(output, numeric_states_index, 
-        issue_name="StateCol_Transposition", 
-        fixed=True)
+    )
 
     # Flag the rows that were impacted
+    output = flag_data_issues_and_fixes(output, numeric_states_index,
+                                        issue_name="StateCol_Transposition",
+                                        fixed=True)
+
 
     logger.info("Note that 'AE' is an abbreviation for the 'state' of \
 Armed Forces - Europe. It's valid.")
@@ -316,16 +313,22 @@ Armed Forces - Europe. It's valid.")
     # FI entry is actually supposed to be FL, according to ZIP
     output.loc[output['State'] == 'FI', 'State'] = 'FL'
 
+    logger.info("Setting cleaned categorical data to categorical dtype.")
+    categorical_columns = [
+        'BusinessName', 'City', 'State', 'Zip',
+        'NAICSCode', 'BusinessType', 'RaceEthnicity', 'Gender', 'Veteran',
+        'NonProfit', 'JobsRetained', 'DateApproved', 'Lender', 'CD'
+    ]
 
+    output[categorical_columns] = \
+    output[categorical_columns].astype('category')
 
     return output
 
 
-
-
-#@click.command()
-#@click.argument('input_filepath', type=click.Path(exists=True))
-#@click.argument('output_filepath', type=click.Path())
+# @click.command()
+# @click.argument('input_filepath', type=click.Path(exists=True))
+# @click.argument('output_filepath', type=click.Path())
 def main(input_filepath, output_filepath):
     """ Runs data processing scripts to turn raw data from (../raw) into
         cleaned data ready to be analyzed (saved in ../processed).
@@ -334,10 +337,6 @@ def main(input_filepath, output_filepath):
     logger.info('making final data set from raw data')
 
     pull_ppp_data(input_filepath, local_copy=output_filepath)
-
-
-
-
 
 
 if __name__ == '__main__':
@@ -355,17 +354,15 @@ if __name__ == '__main__':
 pipeline.')
 
     parser.add_argument('-g', '--google_drive_token_path', type=str,
-        default="/home/jovyan/work/secure_keys/token.pickle",
+                        default="/home/jovyan/work/secure_keys/token.pickle",
                         help='Filepath of the token.pkl file containing \
 user credentials for Google Drive where raw data are stored.')
 
     parser.add_argument('-l', '--local_copy', type=str,
-        default=None,
+                        default=None,
                         help='Optional filepath for where resultant \
 merged data will be stored. Make sure it is a named *.csv file.')
 
     args = vars(parser.parse_args())
-
-    
 
     main(args['google_drive_token_path'], args['local_copy'])
