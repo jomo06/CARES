@@ -43,35 +43,6 @@ adbs <- adbs %>%
                                        is.na(LoanRange) & as.numeric(LoanAmount) <      0                                    ~ "p      Less than Zero",
                                        TRUE ~ "Unknown"))
 
-# create for each loan that has no specific LoanAmount a numeric max/min value, to allow for quick computation of max/min totals
-# for entries with specific LoanAmount values, use those as they are
-
-adbs$LoanAmount<-as.numeric(adbs$LoanAmount)
-
-#Low, Mid, Max values for large loans value range
-adbs <- adbs %>% 
-    mutate(LoanAmount_Estimate_Low = case_when(!is.na(LoanAmount) ~ LoanAmount,
-                                               is.na(LoanAmount) & LoanRange=="a $5-10 million" ~ 5000000,
-                                               is.na(LoanAmount) & LoanRange=="b $2-5 million" ~ 2000000,
-                                               is.na(LoanAmount) & LoanRange=="c $1-2 million" ~ 1000000,
-                                               is.na(LoanAmount) & LoanRange=="d $350,000-1 million" ~ 350000,
-                                               is.na(LoanAmount) & LoanRange=="e $150,000-350,000" ~ 150000),
-           LoanAmount_Estimate_Mid = case_when(!is.na(LoanAmount) ~ LoanAmount,
-                                               is.na(LoanAmount) & LoanRange=="a $5-10 million" ~ 7500000,
-                                               is.na(LoanAmount) & LoanRange=="b $2-5 million" ~ 3500000,
-                                               is.na(LoanAmount) & LoanRange=="c $1-2 million" ~ 1500000,
-                                               is.na(LoanAmount) & LoanRange=="d $350,000-1 million" ~ 675000,
-                                               is.na(LoanAmount) & LoanRange=="e $150,000-350,000" ~ 250000),
-           LoanAmount_Estimate_High = case_when(!is.na(LoanAmount) ~ LoanAmount,
-                                                is.na(LoanAmount) & LoanRange=="a $5-10 million" ~ 10000000,
-                                                is.na(LoanAmount) & LoanRange=="b $2-5 million" ~ 5000000,
-                                                is.na(LoanAmount) & LoanRange=="c $1-2 million" ~ 2000000,
-                                                is.na(LoanAmount) & LoanRange=="d $350,000-1 million" ~ 1000000,
-                                                is.na(LoanAmount) & LoanRange=="e $150,000-350,000" ~ 350000),
-           LoanAmount_lt150k = ifelse(LoanRange=="e $150,000-350,000",0,1),
-           LoanAmount_ge150k = ifelse(LoanRange=="e $150,000-350,000",1,0))
-
-
 # Create Jobs Retained cuts
 adbs <- adbs %>%
   mutate(JobsRetained_Grouped = case_when(as.numeric(JobsRetained) > 400 & as.numeric(JobsRetained) <= 500 ~ "a 400 - 500",
@@ -88,6 +59,7 @@ adbs <- adbs %>%
                                           as.numeric(JobsRetained) <      0                                ~ "l  Negative",
                                           is.na(JobsRetained) ~ NA_character_,
                                           TRUE ~ "Unknown"))   
+
 
 ### Tidy Workspace ---------------------------------------------------------
 
