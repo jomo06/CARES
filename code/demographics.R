@@ -19,11 +19,11 @@ library(geojsonio)
 
 
 ##Change to your wd where repo is cloned to pull in any auxiliary data that may be useful
-setwd("C:/Users/rcarder/Documents/dev/CARES/data")
+setwd("C:/Users/rcarder/Documents/dev/CARES/data/Lookup Tables")
 cities<-read.csv("cities.csv") ##to help provide context to state maps
 
-
-census_api_key('b2e47f1f1e9c7115a34a02992c149628712ecff8', install=TRUE, overwrite = TRUE)
+##removed census key. Sign up for one for free at https://api.census.gov/data/key_signup.html
+census_api_key('', install=TRUE, overwrite = TRUE)
 
 
 ##To explore fields available in the ACS
@@ -39,7 +39,7 @@ geoLevel='congressional district'  ##Zip Codes with approximate tabulation areas
 state=NULL
 
 ##Also pull in geometry polygons for mapping? Takes much longer, so leave FALSE if just the data is needed.
-pullGeography=FALSE
+pullGeography=TRUE
 
 ##Now run lines 49-118
 
@@ -48,7 +48,7 @@ pullGeography=FALSE
 language <- get_acs(geography = geoLevel,
                     variables = c('B16001_001','B16001_002','B16001_003','B16001_004','B16001_005',
                                   'B16001_075','B16001_006'),
-                    year = 2015, state = NULL, geometry = pullGeography) %>%
+                    year = 2015, state = NULL, geometry = FALSE) %>%
   dplyr::select(-moe) %>%
   spread(key = 'variable', value = 'estimate') %>% 
   mutate(
@@ -91,7 +91,7 @@ assign(paste(geoLevel,"Demographics",sep=''),get_acs(geography = geoLevel,
                 variables = c(sapply(seq(1,10,1), function(v) return(paste("B02001_",str_pad(v,3,pad ="0"),sep=""))),
                               'B03002_001','B03002_002','B03002_003','B03002_012','B03002_013','B02017_001',
                               'B19301_001', 'B17021_001', 'B17021_002',"B02001_005","B02001_004","B02001_006","B01003_001"),
-                year = 2018, state = NULL, geometry = FALSE) %>%
+                year = 2018, state = NULL, geometry = TRUE) %>%
   dplyr::select(-moe) %>%
   spread(key = 'variable', value = 'estimate') %>% 
   mutate(
@@ -117,11 +117,90 @@ assign(paste(geoLevel,"Demographics",sep=''),get_acs(geography = geoLevel,
   left_join(age, by="GEOID")%>%
   dplyr::select(-starts_with("B0"))%>%
   dplyr::select(-starts_with("B1"))%>%
-  dplyr::select(-2,-15,-23,-24,-25,-26,-27)%>%
+  dplyr::select(-15,-23,-24,-25,-26,-27)%>%
   mutate(GEOID=as.character(GEOID)))
 
 ##writes file to repo. Be mindful of file size. Not sure if best place for these is in repo or in google drive folder.
 setwd("C:/Users/rcarder/Documents/dev/CARES/data/demographics")
 
 write.csv(get(paste(geoLevel,"Demographics",sep='')),paste(geoLevel,"Demographics.csv",sep=''), row.names = FALSE)
+
+
+reldir<-"C:/Users/rcarder/Documents/dev/All Data by State/All Data by State"
+
+dat_files <- list.files(reldir, full.names = T, recursive = T, pattern = ".*.csv") # scan through all directories and subdirectories for all CSVs
+
+# read in each CSV, all as character values, to allow for a clean import with no initial manipulation
+# for each file, attached the name of the data source file
+adbs <- map_df(dat_files, ~read_csv(.x, col_types = cols(.default = "c")) %>%
+                 mutate(source_file = str_remove_all(.x, "data/20200722/All Data by State/All Data by State/"))
+)
+
+# Clean -------------------------------------------------------------------
+
+
+### Create unified Loan Amount / Loan Range cuts
+adbs <- adbs %>% 
+  mutate(LoanRange_Unified = case_when(!is.na(LoanRange) ~ LoanRange,
+                                       is.na(LoanRange) & as.numeric(LoanAmount) > 125000 & as.numeric(LoanAmount) <= 150000 ~ "f $125,000 - $150,000",
+                                       is.na(LoanRange) & as.numeric(LoanAmount) > 100000 & as.numeric(LoanAmount) <= 125000 ~ "g $100,000 - $125,000",
+                                       is.na(LoanRange) & as.numeric(LoanAmount) >  75000 & as.numeric(LoanAmount) <= 100000 ~ "h  $75,000 - $100,000",
+                                       is.na(LoanRange) & as.numeric(LoanAmount) >  50000 & as.numeric(LoanAmount) <=  75000 ~ "i  $50,000 -  $75,000",
+                                       is.na(LoanRange) & as.numeric(LoanAmount) >  25000 & as.numeric(LoanAmount) <=  50000 ~ "j  $25,000 -  $50,000",
+                                       is.na(LoanRange) & as.numeric(LoanAmount) >   1000 & as.numeric(LoanAmount) <=  25000 ~ "k   $1,000 -  $25,000",
+                                       is.na(LoanRange) & as.numeric(LoanAmount) >    100 & as.numeric(LoanAmount) <=   1000 ~ "l     $100 -    $1000",
+                                       is.na(LoanRange) & as.numeric(LoanAmount) >     10 & as.numeric(LoanAmount) <=    100 ~ "m      $10 -     $100",
+                                       is.na(LoanRange) & as.numeric(LoanAmount) >      0 & as.numeric(LoanAmount) <=     10 ~ "n           Up to $10",
+                                       is.na(LoanRange) & as.numeric(LoanAmount) ==     0                                    ~ "o                Zero",
+                                       is.na(LoanRange) & as.numeric(LoanAmount) <      0                                    ~ "p      Less than Zero",
+                                       TRUE ~ "Unknown"))
+
+# create for each loan that has no specific LoanAmount a numeric max/min value, to allow for quick computation of max/min totals
+# for entries with specific LoanAmount values, use those as they are
+
+adbs$LoanAmount<-as.numeric(adbs$LoanAmount)
+
+#Low, Mid, Max values for large loans value range
+adbs <- adbs %>% 
+  mutate(LoanAmount_Estimate_Low = case_when(!is.na(LoanAmount) ~ LoanAmount,
+                                             is.na(LoanAmount) & LoanRange=="a $5-10 million" ~ 5000000,
+                                             is.na(LoanAmount) & LoanRange=="b $2-5 million" ~ 2000000,
+                                             is.na(LoanAmount) & LoanRange=="c $1-2 million" ~ 1000000,
+                                             is.na(LoanAmount) & LoanRange=="d $350,000-1 million" ~ 350000,
+                                             is.na(LoanAmount) & LoanRange=="e $150,000-350,000" ~ 150000),
+         LoanAmount_Estimate_Mid = case_when(!is.na(LoanAmount) ~ LoanAmount,
+                                             is.na(LoanAmount) & LoanRange=="a $5-10 million" ~ 7500000,
+                                             is.na(LoanAmount) & LoanRange=="b $2-5 million" ~ 3500000,
+                                             is.na(LoanAmount) & LoanRange=="c $1-2 million" ~ 1500000,
+                                             is.na(LoanAmount) & LoanRange=="d $350,000-1 million" ~ 675000,
+                                             is.na(LoanAmount) & LoanRange=="e $150,000-350,000" ~ 250000),
+         LoanAmount_Estimate_High = case_when(!is.na(LoanAmount) ~ LoanAmount,
+                                              is.na(LoanAmount) & LoanRange=="a $5-10 million" ~ 10000000,
+                                              is.na(LoanAmount) & LoanRange=="b $2-5 million" ~ 5000000,
+                                              is.na(LoanAmount) & LoanRange=="c $1-2 million" ~ 2000000,
+                                              is.na(LoanAmount) & LoanRange=="d $350,000-1 million" ~ 1000000,
+                                              is.na(LoanAmount) & LoanRange=="e $150,000-350,000" ~ 350000))
+
+n_distinct(adbs$Zip)
+
+
+### Create Jobs Retained cuts
+adbs <- adbs %>%
+  mutate(JobsRetained_Grouped = case_when(as.numeric(JobsRetained) > 400 & as.numeric(JobsRetained) <= 500 ~ "a 400 - 500",
+                                          as.numeric(JobsRetained) > 300 & as.numeric(JobsRetained) <= 400 ~ "b 300 - 400",
+                                          as.numeric(JobsRetained) > 200 & as.numeric(JobsRetained) <= 300 ~ "c 200 - 300",
+                                          as.numeric(JobsRetained) > 100 & as.numeric(JobsRetained) <= 200 ~ "d 100 - 200",
+                                          as.numeric(JobsRetained) >  50 & as.numeric(JobsRetained) <= 100 ~ "e  50 - 100",
+                                          as.numeric(JobsRetained) >  25 & as.numeric(JobsRetained) <=  50 ~ "f  25 -  50",
+                                          as.numeric(JobsRetained) >  10 & as.numeric(JobsRetained) <=  25 ~ "g  10 -  25",
+                                          as.numeric(JobsRetained) >   5 & as.numeric(JobsRetained) <=  10 ~ "h   5 -  10",
+                                          as.numeric(JobsRetained) >   1 & as.numeric(JobsRetained) <=   5 ~ "i   2 -   5",
+                                          as.numeric(JobsRetained) >   0 & as.numeric(JobsRetained) <=   1 ~ "j         1",
+                                          as.numeric(JobsRetained) ==     0                                ~ "k      Zero",
+                                          as.numeric(JobsRetained) <      0                                ~ "l  Negative",
+                                          is.na(JobsRetained) ~ NA_character_,
+                                          TRUE ~ "Unknown"))   
+
+
+
 
