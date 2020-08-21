@@ -1,23 +1,21 @@
-#################################
-# NOTE: run map_prep.R first to create the input datasets county_demo and ppp_census
-#################################
+# prepare input data
+#source("code/maps/map_prep.R")
 
 library(shiny)
 library(leaflet)
 library(leaflet.extras)
+library(rgeos)
 
 ui <- fluidPage(
-    titlePanel("Michigan PPP Loans"),
+    titlePanel("PPP Loans + Census Data Explorer"),
     sidebarLayout(
         sidebarPanel(
             selectInput(inputId = "geoLevel",
                         label = "Select Geographic Level:",
-                        choices = c("State" = "state_geoid", 
-                                    "County" = "county_geoid", 
-                                    "Congressional District" = "cd_geoid",
-                                    "Census Tract" = "tract_geoid",
-                                    "ZCTA" = "zcta_geoid"),
-                        selected = "county_geoid"),
+                        choices = c("State" = "State", 
+                                    "County" = "County",
+                                    "Congressional District" = "Congressional District"),
+                        selected = "state_geoid"),
             selectInput(inputId = "demographicVariable",
                         label = "Select Demographic Variable:",
                         choices = c("Total Population" = "total_population", 
@@ -28,13 +26,12 @@ ui <- fluidPage(
                         selected = "total_population"),
             selectInput(inputId = "loanVariable",
                         label = "Select PPP Loan Statistic:",
-                        choices = c("Total Amt (Low Estimate)" = "Low", 
-                                    "Total Amt (Med Estimate)" = "Mid", 
-                                    "Total Amt (High Estimate)" = "High",
-                                    "Per Capita Amt (Low Estimate)" = "LowPerCap", 
-                                    "Per Capita Amt (Med Estimate)" = "MidPerCap", 
-                                    "Per Capita Amt (High Estimate)" = "HighPerCap"),
-                        selected = "Mid")
+                        choices = c("Estimate Loan Amount - All Loans" = "LoanAmt_Est_All", 
+                                    "Estimate Loan Amount - Up to 150K" = "LoanAmt_Est_lt150k",
+                                    "Number of Loans - All Loans" = "LoanCnt_All",
+                                    "Number of Loans - Up to 150K" = "LoanCnt_lt150k",
+                                    "Number of Loans - More than 150K" = "LoanCnt_gt150k"),
+                        selected = "LoanAmt_Est_All")
             
         ),
         mainPanel(
@@ -52,19 +49,19 @@ server <- function(input, output, session) {
     
     output$mymap <- renderLeaflet({
         
-        demo <- county_demo %>% 
-            select(GEOID, "demoVar" = input$demographicVariable)
-            #select(GEOID, "demoVar" = "total_population")
+        df <- adbs_all_geos %>% 
+            filter(GEOID_TYPE == input$geoLevel) %>% 
+            select(GEOID,
+                   "demoVar" = input$demographicVariable,
+                   "loanVar" = input$loanVariable)
         
-        dat <- ppp_census %>%
-            select("GEOID" = "county_geoid", 
-                   "sumVar" = input$loanVariable) %>% 
-                   #"sumVar" = "Mid") %>% 
-            group_by(GEOID) %>%
-            summarize(val = sum(sumVar, na.rm = TRUE)) %>%
-            left_join(demo, by = "GEOID")
-        
-        spdf <- merge(counties_shp, dat, by = "GEOID")
+        if (input$geoLevel == "County") {
+            spdf <- merge(counties, df, by = "GEOID")
+        } else if (input$geoLevel == "State") {
+            spdf <- merge(states, df, by = "GEOID")
+        } else if (input$geoLevel == "Congressional District") {
+            spdf <- merge(cds, df, by = "GEOID")
+        }
         
         leaflet(data = spdf) %>% 
             addProviderTiles(providers$Stamen.TonerLite) %>% 
@@ -73,7 +70,7 @@ server <- function(input, output, session) {
                         weight = 1, 
                         fillOpacity = 0.8) %>% 
             addCircles(~as.numeric(INTPTLON), ~as.numeric(INTPTLAT), 
-                       radius = ~sqrt(val),
+                       radius = ~sqrt(loanVar),
                        color = "#444444", 
                        weight = 1, 
                        fillOpacity = 0.2)
