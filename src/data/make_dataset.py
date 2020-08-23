@@ -268,6 +268,44 @@ so no transposition performed.")
     return output
 
 
+def find_all_dtypes(series):
+    '''
+    Provided a pandas Series, finds all dtypes (e.g. str, int, etc.) 
+    present within it. Useful for data wrangling and verifying that a 
+    column has only the type of data in it that you're expecting.
+
+
+    Parameters
+    ----------
+    series: pandas Series, usually a column from a pandas DataFrame.
+
+
+    Returns
+    -------
+    Numpy array of all unique dtypes found.
+    '''
+
+    return series.apply(type).unique()
+
+
+def filter_by_dtype(series, dtype):
+    '''
+    Filters out all entries in a Series except those that match
+    the dtype provided. Useful for seeing the nature of data entries
+    that are not the dtype expected.
+
+
+    Parameters
+    ----------
+    series: pandas Series.
+
+    dtype: primitive type or Class to use as matching criterion. Only entries 
+        in ``series`` that match this will be returned.
+    '''
+
+    return series.dropna()[series.dropna().apply(lambda x: type(x) == dtype)]
+
+
 def clean_ppp_data(df):
     '''
     Tackles various SBA PPP data cleaning tasks as a one-liner.
@@ -317,11 +355,16 @@ Armed Forces - Europe. It's valid.")
     categorical_columns = [
         'BusinessName', 'City', 'State', 'Zip',
         'NAICSCode', 'BusinessType', 'RaceEthnicity', 'Gender', 'Veteran',
-        'NonProfit', 'JobsRetained', 'DateApproved', 'Lender', 'CD'
+        'NonProfit', 'Lender', 'CD'
     ]
 
     output[categorical_columns] = \
     output[categorical_columns].astype('category')
+
+    # All Job entries are numeric or NaN, but need to be coerced
+    # in some cases (because they come through as strings)
+    output['JobsRetained'] = \
+    pd.to_numeric(output['JobsRetained']).astype('Int64')
 
     return output
 
@@ -336,7 +379,15 @@ def main(input_filepath, output_filepath):
     logger = logging.getLogger(__name__)
     logger.info('making final data set from raw data')
 
-    pull_ppp_data(input_filepath, local_copy=output_filepath)
+    df = pull_ppp_data(input_filepath, local_copy=output_filepath)
+
+
+    df = clean_ppp_data(df)
+
+    return df
+
+
+
 
 
 if __name__ == '__main__':
