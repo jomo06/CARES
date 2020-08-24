@@ -14,7 +14,7 @@ setwd("C:/Users/kathy/Documents/github/CARES")
 # create base ppp dataset
 #source("bin/ppp_data_merge.R")
 
-# read in lookup tables
+# read in lookup tables -- download from google drive
 zip2zcta <- read_csv("data/Lookup Tables/zip_to_zcta_2019.csv") %>%
     mutate(ZIP_CODE=str_pad(as.character(ZIP_CODE), width=5, side="left", pad="0"))
 
@@ -27,7 +27,7 @@ zip2county <- read_excel("data/Lookup Tables/ZIP_COUNTY_032020.xlsx",
 zip2cbsa <- read_excel("data/Lookup Tables/ZIP_CBSA_032020.xlsx",
                        col_types=c("text", "text", "numeric", "numeric", "numeric", "numeric"))
 
-# read in demographic data
+# read in demographic data -- download from google drive
 countydemo <- read_csv("data/demographics/countyDemographics.csv") 
 statedemo <- read_csv("data/demographics/stateDemographics.csv")
 cddemo <- read_csv("data/demographics/congressional districtDemographics.csv")
