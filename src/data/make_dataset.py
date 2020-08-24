@@ -65,15 +65,18 @@ def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.p
     -------
     pandas DataFrame with all of the raw PPP data loaded.
     '''
+
     google_drive_token_path = '/Users/kogilvie/Documents/github/CARES'
+    local_copy = '/Users/kogilvie/Documents/github/CARES/data/"All Data by State"/all_ppp.csv'
+
     # Pull in our Google Drive creds used with InstalledAppFlow
     # Or, if it's a json, generate creds on the fly for ServiceAccount
-    if google_drive_token_path.split('.')[1] == 'pickle':
-        with open(google_drive_token_path, 'rb') as token:
-            creds = pickle.load(token)
-    else:
+    if google_drive_token_path.split('.')[1] != 'pickle':
         creds = service_account.Credentials.from_service_account_file(google_drive_token_path,
                                                                       scopes=['https://www.googleapis.com/auth/drive'])
+    else:
+        with open(google_drive_token_path, 'rb') as token:
+            creds = pickle.load(token)
 
     service = build('drive', 'v3', credentials=creds)
 
@@ -81,8 +84,7 @@ def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.p
     data_folder_info = service.files().list(q="name = 'All Data by State'")\
         .execute().get('files', [])[0]
 
-    query = f"'{data_folder_info['id']}' in parents \
-and mimeType = 'application/vnd.google-apps.folder'"
+    query = f"'{data_folder_info['id']}' in parents and mimeType = 'application/vnd.google-apps.folder'"
 
     data_subfolders = service.files().list(q=query).execute()\
         .get('files', [])
@@ -256,14 +258,14 @@ please only set one.")
         output.loc[rows_affected,
                    output.columns.drop(frozen_columns)] = \
             output.loc[rows_affected,
-                       output.columns.drop(frozen_columns)]\
+                       output.columns.drop(frozen_columns)] \
             .shift(periods=transposition_distance, axis='columns')
 
     elif columns_to_move:
         output.loc[rows_affected,
                    columns_to_move] = \
             output.loc[rows_affected,
-                       columns_to_move]\
+                       columns_to_move] \
             .shift(periods=transposition_distance, axis='columns')
 
     else:
@@ -377,7 +379,7 @@ Armed Forces - Europe. It's valid.")
 # @click.command()
 # @click.argument('input_filepath', type=click.Path(exists=True))
 # @click.argument('output_filepath', type=click.Path())
-def main(input_filepath, output_filepath):
+def main(input_filepath, output_filepath, cleaned_output=None):
     """ Runs data processing scripts to turn raw data from (../raw) into
         cleaned data ready to be analyzed (saved in ../processed).
     """
@@ -387,8 +389,10 @@ def main(input_filepath, output_filepath):
     input_filepath = ''
     df = pull_ppp_data(input_filepath, local_copy=output_filepath)
 
-
     df = clean_ppp_data(df)
+
+    if cleaned_output is not None:
+        df.to_csv(cleaned_output, index=False)
 
     return df
 
