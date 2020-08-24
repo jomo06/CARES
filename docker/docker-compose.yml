@@ -1,0 +1,27 @@
+version: '3'
+services:
+
+  jupyterlab:
+    image: emigre459/jupyter-custom-notebook:1.0
+    ports: 
+      - "10000:8888" # JupyterLab API
+    container_name: jupyterlab
+    environment: 
+      - JUPYTER_ENABLE_LAB=yes
+    volumes: 
+      #- jupyter_workspace:/home/jovyan/work
+      # Mount host working directory
+      - ../:/home/jovyan/work/
+
+    networks:
+      - jupyterlab_nw
+
+    privileged: true
+
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+
+
+networks:
+    jupyterlab_nw:
