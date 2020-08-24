@@ -40,11 +40,12 @@ ui <- fluidPage(
                                     "Percent Speaking Another Language" = "any_other_than_english_pct")),
             
             selectInput("loanVar", "Loan Variable",
-                        choices = c("Estimate Loan Amount - All Loans" = "LoanAmt_Est_All", 
-                                    "Estimate Loan Amount - Up to 150K" = "LoanAmt_Est_lt150k",
-                                    "Number of Loans - All Loans" = "LoanCnt_All",
-                                    "Number of Loans - Up to 150K" = "LoanCnt_lt150k",
-                                    "Number of Loans - More than 150K" = "LoanCnt_gt150k")),
+                        choices = c("Total Loan Amount - Minimum Estimate" = "Low", 
+                                    "Total Loan Amount - Midpoint Estimate" = "Mid",
+                                    "Total Loan Amount - Maximum Estimate" = "High",
+                                    "Per Capita Loan Amount - Minimum Estimate" = "LowPerCap", 
+                                    "Per Capita Loan Amount - Midpoint Estimate" = "MidPerCap",
+                                    "Per Capita Loan Amount - Maximum Estimate" = "HighPerCap")),
             
             conditionalPanel(condition="$('html').hasClass('shiny-busy')",
                              tags$div("Loading map...",id="loadmessage"))

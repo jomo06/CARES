@@ -12,7 +12,7 @@ setwd("C:/Users/kathy/Documents/github/CARES")
 # read in data
 ############################
 # create base ppp dataset
-#source("bin/ppp_data_merge.R")
+source("bin/ppp_data_merge.R")
 
 # read in lookup tables -- download from google drive
 zip2zcta <- read_csv("data/Lookup Tables/zip_to_zcta_2019.csv") %>%
@@ -30,7 +30,7 @@ zip2cbsa <- read_excel("data/Lookup Tables/ZIP_CBSA_032020.xlsx",
 # read in demographic data -- download from google drive
 countydemo <- read_csv("data/demographics/countyDemographics.csv") 
 statedemo <- read_csv("data/demographics/stateDemographics.csv")
-cddemo <- read_csv("data/demographics/congressional districtDemographics.csv")
+cddemo <- read_csv("data/demographics/congressional districtDemographics_gdrive.csv")
 
 # download census geographies
 states <- states()
@@ -66,8 +66,7 @@ adbs <- adbs %>%
                                                 is.na(LoanAmount) & LoanRange=="b $2-5 million" ~ 5000000,
                                                 is.na(LoanAmount) & LoanRange=="c $1-2 million" ~ 2000000,
                                                 is.na(LoanAmount) & LoanRange=="d $350,000-1 million" ~ 1000000,
-                                                is.na(LoanAmount) & LoanRange=="e $150,000-350,000" ~ 350000),
-           LoanAmount_gt150k = (LoanAmount_Estimate_Low > 150000)*1)
+                                                is.na(LoanAmount) & LoanRange=="e $150,000-350,000" ~ 350000))
 
 # get congressional district code
 state_fips <- states@data[,c('GEOID', 'STUSPS')] %>% 
@@ -88,11 +87,9 @@ adbs <- adbs %>%
 # zipcode
 adbs_zip <- adbs %>% 
     group_by(Zip) %>% 
-    summarise(LoanAmt_Est_All = sum(LoanAmount_Estimate_Mid),
-              LoanAmt_Est_lt150k = sum(LoanAmount_Estimate_Mid*(1-LoanAmount_gt150k)),
-              LoanCnt_All = n(),
-              LoanCnt_lt150k = sum(1-LoanAmount_gt150k),
-              LoanCnt_gt150k = sum(LoanAmount_gt150k)) %>% 
+    summarise(Low = sum(LoanAmount_Estimate_Low, na.rm=TRUE),
+              Mid = sum(LoanAmount_Estimate_Mid, na.rm=TRUE),
+              High = sum(LoanAmount_Estimate_High, na.rm=TRUE)) %>% 
     rename('GEOID' = 'Zip') %>% 
     mutate('GEOID_TYPE' = 'Zip') %>% 
     select(GEOID, GEOID_TYPE, everything())
@@ -101,44 +98,47 @@ adbs_zip <- adbs %>%
 adbs_county <- adbs_zip %>% 
     left_join(zip2county, by = c("GEOID" = "ZIP")) %>% 
     group_by(COUNTY) %>% 
-    summarise(LoanAmt_Est_All = sum(LoanAmt_Est_All*BUS_RATIO, na.rm=T),
-              LoanAmt_Est_lt150k = sum(LoanAmt_Est_lt150k*BUS_RATIO, na.rm=T),
-              LoanCnt_All = sum(LoanCnt_All*BUS_RATIO, na.rm=T),
-              LoanCnt_lt150k = sum(LoanCnt_lt150k*BUS_RATIO, na.rm=T),
-              LoanCnt_gt150k = sum(LoanCnt_gt150k*BUS_RATIO, na.rm=T)) %>% 
+    summarise(Low = sum(Low*BUS_RATIO, na.rm=TRUE),
+              Mid = sum(Mid*BUS_RATIO, na.rm=TRUE),
+              High = sum(High*BUS_RATIO, na.rm=TRUE)) %>% 
     rename('GEOID' = 'COUNTY') %>% 
     mutate('GEOID_TYPE' = 'County') %>% 
-    select(GEOID, GEOID_TYPE, everything()) %>% 
-    right_join(countydemo, by="GEOID")
+    right_join(countydemo, by="GEOID") %>% 
+    mutate(LowPerCap = Low/total_population,
+           MidPerCap = Mid/total_population,
+           HighPerCap = High/total_population) %>% 
+    select(GEOID, GEOID_TYPE, everything())
 
-sum(adbs_county$LoanAmt_Est_All, na.rm = T)/sum(adbs_zip$LoanAmt_Est_All, na.rm = T) # 99.7% loans are mapped to counties
+sum(adbs_county$Mid, na.rm = T)/sum(adbs_zip$Mid, na.rm = T) # 99.7% loans are mapped to counties
 
 # state
 adbs_state <- adbs_county %>% 
     mutate(STATE = str_sub(GEOID, 1, 2)) %>% 
     group_by(STATE) %>% 
-    summarise(LoanAmt_Est_All = sum(LoanAmt_Est_All),
-              LoanAmt_Est_lt150k = sum(LoanAmt_Est_lt150k),
-              LoanCnt_All = sum(LoanCnt_All),
-              LoanCnt_lt150k = sum(LoanCnt_lt150k),
-              LoanCnt_gt150k = sum(LoanCnt_gt150k)) %>% 
+    summarise(Low = sum(Low, na.rm=TRUE),
+              Mid = sum(Mid, na.rm=TRUE),
+              High = sum(High, na.rm=TRUE)) %>% 
     rename('GEOID' = 'STATE') %>% 
     mutate('GEOID_TYPE' = 'State') %>% 
-    select(GEOID, GEOID_TYPE, everything()) %>% 
-    right_join(statedemo, by="GEOID")
+    right_join(statedemo, by="GEOID") %>% 
+    mutate(LowPerCap = Low/total_population,
+           MidPerCap = Mid/total_population,
+           HighPerCap = High/total_population) %>% 
+    select(GEOID, GEOID_TYPE, everything())
 
 # congressional district
 adbs_cd <- adbs %>% 
     group_by(cd_fips) %>% 
-    summarise(LoanAmt_Est_All = sum(LoanAmount_Estimate_Mid),
-              LoanAmt_Est_lt150k = sum(LoanAmount_Estimate_Mid*(1-LoanAmount_gt150k)),
-              LoanCnt_All = n(),
-              LoanCnt_lt150k = sum(1-LoanAmount_gt150k),
-              LoanCnt_gt150k = sum(LoanAmount_gt150k)) %>% 
+    summarise(Low = sum(LoanAmount_Estimate_Low, na.rm=TRUE),
+              Mid = sum(LoanAmount_Estimate_Mid, na.rm=TRUE),
+              High = sum(LoanAmount_Estimate_High, na.rm=TRUE)) %>% 
     rename('GEOID' = 'cd_fips') %>% 
     mutate('GEOID_TYPE' = 'Congressional District') %>% 
-    select(GEOID, GEOID_TYPE, everything()) %>% 
-    right_join(cddemo, by="GEOID")
+    right_join(cddemo, by="GEOID") %>% 
+    mutate(LowPerCap = Low/total_population,
+           MidPerCap = Mid/total_population,
+           HighPerCap = High/total_population) %>% 
+    select(GEOID, GEOID_TYPE, everything())
 
 ############################
 # combine & export
