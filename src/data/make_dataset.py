@@ -36,7 +36,7 @@ def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.p
     pandas DataFrame for further analysis.
 
     Fair warning: initial testing indicates that this will take
-    a little more than 8 minutes to complete. So save it locally to 
+    a little more than 8 minutes to complete. So save it locally to
     avoid downloading and stitching steps if you can.
 
 
@@ -65,10 +65,15 @@ def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.p
     -------
     pandas DataFrame with all of the raw PPP data loaded.
     '''
-
-    # Pull in our Google Drive creds
-    with open(google_drive_token_path, 'rb') as token:
-        creds = pickle.load(token)
+    google_drive_token_path = '/Users/kogilvie/Documents/github/CARES'
+    # Pull in our Google Drive creds used with InstalledAppFlow
+    # Or, if it's a json, generate creds on the fly for ServiceAccount
+    if google_drive_token_path.split('.')[1] == 'pickle':
+        with open(google_drive_token_path, 'rb') as token:
+            creds = pickle.load(token)
+    else:
+        creds = service_account.Credentials.from_service_account_file(google_drive_token_path,
+                                                                      scopes=['https://www.googleapis.com/auth/drive'])
 
     service = build('drive', 'v3', credentials=creds)
 
@@ -143,7 +148,7 @@ def flag_data_issues_and_fixes(df, rows_affected, issue_name, fixed=False):
     '''
     When a data quality issue is found, this will add a column
     to the input DataFrame named '<issue_name>_Problem' and fill it
-    with 1s for the rows that are impacted and 0s for those that are not. 
+    with 1s for the rows that are impacted and 0s for those that are not.
     It will also optionally add a column called '<issue_name>_Problem_Fixed'
     that will have 1s for the rows that have been corrected for this issue.
 
@@ -152,14 +157,14 @@ def flag_data_issues_and_fixes(df, rows_affected, issue_name, fixed=False):
     ----------
     df: pandas DataFrame with the improperly transposed columns data.
 
-    rows_affected: pandas Index object or list. Indicates the rows in ``df`` 
+    rows_affected: pandas Index object or list. Indicates the rows in ``df``
         that should be shifted, with the rest being left alone.
 
     issue_name: str. The (concise) name of the data problem you're flagging.
         Should be very short like "StateCol_Transposition" at the longest.
 
-    fixed: bool. If True, an additional column is added to indicate that 
-        all of the affected rows were corrected. This column will also be 
+    fixed: bool. If True, an additional column is added to indicate that
+        all of the affected rows were corrected. This column will also be
         binary.
 
 
@@ -201,7 +206,7 @@ def transpose_columns(
 ):
     '''
     Moves whole columns from one position to another, as a group.
-    Useful when you find that there's a pattern wherein a bunch of columns 
+    Useful when you find that there's a pattern wherein a bunch of columns
     were off by 1/2/3/etc. from the column they were supposed to be in.
 
 
@@ -209,15 +214,15 @@ def transpose_columns(
     ----------
     df: pandas DataFrame with the improperly transposed columns data.
 
-    rows_affected: pandas Index object or list. Indicates the rows in ``df`` 
+    rows_affected: pandas Index object or list. Indicates the rows in ``df``
         that should be shifted, with the rest being left alone.
 
     columns_to_freeze: list of str containing the names of the columns that
-        shouldn't be transposed. All other columns not in this list will be 
+        shouldn't be transposed. All other columns not in this list will be
         moved. If this is None, ``columns_to_move`` should not be None.
 
     columns_to_move: list of str containing the names of the columns that
-        should be transposed. All other columns will be left alone. If this is 
+        should be transposed. All other columns will be left alone. If this is
         None, ``columns_to_freeze`` should not be None.
 
     transposition_distance: int. Indicates how many columns to the right
@@ -270,8 +275,8 @@ so no transposition performed.")
 
 def find_all_dtypes(series):
     '''
-    Provided a pandas Series, finds all dtypes (e.g. str, int, etc.) 
-    present within it. Useful for data wrangling and verifying that a 
+    Provided a pandas Series, finds all dtypes (e.g. str, int, etc.)
+    present within it. Useful for data wrangling and verifying that a
     column has only the type of data in it that you're expecting.
 
 
@@ -299,7 +304,7 @@ def filter_by_dtype(series, dtype):
     ----------
     series: pandas Series.
 
-    dtype: primitive type or Class to use as matching criterion. Only entries 
+    dtype: primitive type or Class to use as matching criterion. Only entries
         in ``series`` that match this will be returned.
     '''
 
@@ -379,6 +384,7 @@ def main(input_filepath, output_filepath):
     logger = logging.getLogger(__name__)
     logger.info('making final data set from raw data')
 
+    input_filepath = ''
     df = pull_ppp_data(input_filepath, local_copy=output_filepath)
 
 
