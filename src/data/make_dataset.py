@@ -67,13 +67,12 @@ def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.p
     '''
 
     google_drive_token_path = '/Users/kogilvie/Documents/github/CARES'
-    local_copy = '/Users/kogilvie/Documents/github/CARES/data/"All Data by State"/all_ppp.csv'
-
+    
     # Pull in our Google Drive creds used with InstalledAppFlow
     # Or, if it's a json, generate creds on the fly for ServiceAccount
     if google_drive_token_path.split('.')[1] != 'pickle':
         creds = service_account.Credentials.from_service_account_file(google_drive_token_path,
-                                                                      scopes=['https://www.googleapis.com/auth/drive'])
+            scopes=['https://www.googleapis.com/auth/drive'])
     else:
         with open(google_drive_token_path, 'rb') as token:
             creds = pickle.load(token)
