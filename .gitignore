@@ -3,7 +3,7 @@
 .RData
 .Ruserdata
 data/All Data By State/
-data/tidy_data/
+#data/tidy_data/
 *.Rproj
 
 .DS_Store
@@ -11,5 +11,6 @@ data/tidy_data/
 # Python stuff
 python/data
 python/secure_keys
+src.egg-info/
+__pycache__/
 .ipynb_checkpoints
-src.egg-info
