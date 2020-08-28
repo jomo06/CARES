@@ -42,7 +42,6 @@ def main(service_account=False):
     """Shows basic usage of the Drive v3 API.
     Prints the names and ids of the first 10 files the user has access to.
     """
-
     print(os.path.abspath(sys.argv[0]))
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is

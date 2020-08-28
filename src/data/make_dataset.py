@@ -80,8 +80,6 @@ def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.p
     service = build('drive', 'v3', credentials=creds)
 
     # Find the info for All Data by State folder that contains raw PPP data
-    data_folder_info = service.files().list(q="name = 'All Data by State'")\
-        .execute().get('files', [])[0]
 
     query = f"'{data_folder_info['id']}' in parents and mimeType = 'application/vnd.google-apps.folder'"
 
