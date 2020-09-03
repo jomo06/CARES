@@ -3,7 +3,8 @@
 .RData
 .Ruserdata
 data/All Data By State/
-#data/tidy_data/
+data/All Data 0808/
+data/tidy_data/
 *.Rproj
 
 .DS_Store
