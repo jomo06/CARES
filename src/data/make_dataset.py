@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import argparse
 import click
 import logging
 from pathlib import Path
@@ -10,42 +11,25 @@ import numpy as np
 import datetime as dt
 import pytz
 
+from copy import deepcopy
+
 from io import BytesIO
 
 import pickle
 from googleapiclient.discovery import build
-from google.oauth2 import service_account
 
 from tqdm import tqdm
 # Make sure any previous runs of tqdm that were interrupted are cleared out
 getattr(tqdm, '_instances', {}).clear()
 
-import argparse
 
 log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(level=logging.INFO, format=log_fmt)
 
 logger = logging.getLogger()
 
-def generate_creds_using_service_account(json_path):
-    '''
-    If using a service account with Google Drive, generate the
-    creds with the following methods. Doesn't use the pickling
-    paradigm below, but DOES require you to share the data folder
-    with the service account email explicitly, or else the
-    service account will have access to nothing in its drive.
-    '''
 
-    SCOPE = ['https://www.googleapis.com/auth/drive']
-
-    ## this is the JSON that was generated from the Google API
-    ## Console (see https://github.com/googleapis/google-api-python-client/blob/master/docs/oauth-server.md#creating-a-service-account)
-    SERVICE_ACCOUNT_FILE = 'python/auth_payload.json'
-
-    credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPE)
-
-
-def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.pickle', local_copy=None, service_account=False):
+def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.pickle', local_copy=None):
     '''
     Pulls down files from the DataKind NPF Google Drive
     then merges SBA PPP CSV files found into a single
@@ -76,39 +60,31 @@ def pull_ppp_data(google_drive_token_path='/home/jovyan/work/secure_keys/token.p
         for saving a local copy of the merged CSV file to avoid
         re-downloading it later.
 
-    service_account: boolean. This argument defaults to False.
-
-        If False, authenticating to Google Drive requires the
-        pickled token as described above.
-
-        If True, the path passed into the function should be the
-        filepath to a copy of the JSON generated when creating a
-        service account in the Google Developers Console.
 
     Returns
     -------
     pandas DataFrame with all of the raw PPP data loaded.
     '''
 
-    if service_account is True:
-        creds = generate_creds_using_service_account(google_drive_token_path)
+    google_drive_token_path = '/Users/kogilvie/Documents/github/CARES'
+    
+    # Pull in our Google Drive creds used with InstalledAppFlow
+    # Or, if it's a json, generate creds on the fly for ServiceAccount
+    if google_drive_token_path.split('.')[1] != 'pickle':
+        creds = service_account.Credentials.from_service_account_file(google_drive_token_path,
+            scopes=['https://www.googleapis.com/auth/drive'])
     else:
-        # Pull in our Google Drive creds
         with open(google_drive_token_path, 'rb') as token:
             creds = pickle.load(token)
-
 
     service = build('drive', 'v3', credentials=creds)
 
     # Find the info for All Data by State folder that contains raw PPP data
-    data_folder_info = service.files().list(q = "name = 'All Data by State'")\
-    .execute().get('files', [])[0]
 
-    query = f"'{data_folder_info['id']}' in parents \
-and mimeType = 'application/vnd.google-apps.folder'"
+    query = f"'{data_folder_info['id']}' in parents and mimeType = 'application/vnd.google-apps.folder'"
 
-    data_subfolders = service.files().list(q = query).execute()\
-    .get('files', [])
+    data_subfolders = service.files().list(q=query).execute()\
+        .get('files', [])
 
     # Find all CSV files in the child folders
     data_subfolder_ids = []
@@ -117,16 +93,16 @@ and mimeType = 'application/vnd.google-apps.folder'"
     for subfolder in data_subfolders:
         data_subfolder_ids.append(subfolder['id'])
 
-    query = " in parents or ".join([f"'{folder_id}'" \
-        for folder_id in data_subfolder_ids])
+    query = " in parents or ".join([f"'{folder_id}'"
+                                    for folder_id in data_subfolder_ids])
     query += " in parents"
 
     # Guarantee OR statements are evaluated together first, then AND
     query = f"({query})"
-    query +=  "and mimeType = 'text/csv'"
+    query += "and mimeType = 'text/csv'"
 
     # Get all CSV file IDs from data subfolders as a list of ByteStrings
-    data_file_ids = service.files().list(q = query).execute().get('files', [])
+    data_file_ids = service.files().list(q=query).execute().get('files', [])
 
     # Pull and concatenate all ByteStrings, skipping headers,
     # and decode into single DataFrame for further analysis
@@ -135,14 +111,14 @@ and mimeType = 'application/vnd.google-apps.folder'"
     for i, file in enumerate(tqdm(data_file_ids)):
         if i == 0:
             data_str = service.files()\
-            .get_media(fileId=file['id'])\
-            .execute()
+                .get_media(fileId=file['id'])\
+                .execute()
 
         # just concatenating here, without header, since we already have it
         else:
             temp_data_str = service.files()\
-            .get_media(fileId=file['id'])\
-            .execute()
+                .get_media(fileId=file['id'])\
+                .execute()
 
             # Assuming here that header is the same across files and thus we can skip it
             # Find end of header by finding first newline character
@@ -164,8 +140,60 @@ and mimeType = 'application/vnd.google-apps.folder'"
     if local_copy is not None:
         df.to_csv(local_copy, index=False)
 
-
     return df
+
+
+def flag_data_issues_and_fixes(df, rows_affected, issue_name, fixed=False):
+    '''
+    When a data quality issue is found, this will add a column
+    to the input DataFrame named '<issue_name>_Problem' and fill it
+    with 1s for the rows that are impacted and 0s for those that are not.
+    It will also optionally add a column called '<issue_name>_Problem_Fixed'
+    that will have 1s for the rows that have been corrected for this issue.
+
+
+    Parameters
+    ----------
+    df: pandas DataFrame with the improperly transposed columns data.
+
+    rows_affected: pandas Index object or list. Indicates the rows in ``df``
+        that should be shifted, with the rest being left alone.
+
+    issue_name: str. The (concise) name of the data problem you're flagging.
+        Should be very short like "StateCol_Transposition" at the longest.
+
+    fixed: bool. If True, an additional column is added to indicate that
+        all of the affected rows were corrected. This column will also be
+        binary.
+
+
+    Returns
+    -------
+    A copy of the input DataFrame with the extra column(s) for flagging issues/
+    solutions.
+    '''
+
+    output = df.copy()
+
+    problem_string = f"{issue_name}_Problem"
+
+    # Mark all rows that had this issue with 1
+    output.loc[rows_affected, problem_string] = 1
+
+    # For any rows unaffected, set problem flag to 0 instead of null
+    output.fillna({problem_string: 0}, inplace=True)
+    output[problem_string] = output[problem_string].astype(int)
+
+    if fixed:
+        # Mark all rows that had this issue with 1
+        output.loc[rows_affected, problem_string + "_Fixed"] = 1
+
+        # For any rows unaffected, set problem flag to 0 instead of null
+        output.fillna({problem_string + "_Fixed": 0}, inplace=True)
+        output[problem_string + "_Fixed"] = output[problem_string + "_Fixed"]\
+            .astype(int)
+
+    return output
 
 
 def transpose_columns(
@@ -174,7 +202,7 @@ def transpose_columns(
     columns_to_freeze=None,
     columns_to_move=None,
     transposition_distance=0
-    ):
+):
     '''
     Moves whole columns from one position to another, as a group.
     Useful when you find that there's a pattern wherein a bunch of columns
@@ -185,8 +213,8 @@ def transpose_columns(
     ----------
     df: pandas DataFrame with the improperly transposed columns data.
 
-    rows_affected: pandas Index object. Indicates the rows in ``df`` that
-        should be shifted, with the rest being left alone.
+    rows_affected: pandas Index object or list. Indicates the rows in ``df``
+        that should be shifted, with the rest being left alone.
 
     columns_to_freeze: list of str containing the names of the columns that
         shouldn't be transposed. All other columns not in this list will be
@@ -198,33 +226,88 @@ def transpose_columns(
 
     transposition_distance: int. Indicates how many columns to the right
         (if positive) or left (if negative) to move the columns.
+
+
+    Returns
+    -------
+    A copy of the input DataFrame with the flagged rows transposed by the
+    indicated number of columns.
     '''
 
     output = df.copy()
 
-    if columns_to_freeze and columns_to_move:
+    problem_fix_columns = df.columns[df.columns.str.contains("_Problem")]
+    frozen_columns = deepcopy(columns_to_freeze)
+
+    # Check that our problem and fix flag columns aren't transposed ever
+    if frozen_columns is not None:
+        # Check if all problem/fix columns are included
+        # If not, add them in
+        for column in problem_fix_columns:
+            if column not in frozen_columns:
+                frozen_columns.append(column)
+
+    if frozen_columns and columns_to_move:
         raise ValueError("columns_to_freeze and columns_to_move are both set, \
 please only set one.")
 
-    elif columns_to_freeze:
+    elif frozen_columns:
         output.loc[rows_affected,
-        output.columns.drop(columns_to_freeze)] = \
-        output.loc[rows_affected,
-        output.columns.drop(columns_to_freeze)]\
-        .shift(periods=transposition_distance, axis='columns')
+                   output.columns.drop(frozen_columns)] = \
+            output.loc[rows_affected,
+                       output.columns.drop(frozen_columns)] \
+            .shift(periods=transposition_distance, axis='columns')
 
     elif columns_to_move:
         output.loc[rows_affected,
-        columns_to_move] = \
-        output.loc[rows_affected,
-        columns_to_move]\
-        .shift(periods=transposition_distance, axis='columns')
+                   columns_to_move] = \
+            output.loc[rows_affected,
+                       columns_to_move] \
+            .shift(periods=transposition_distance, axis='columns')
 
     else:
         logger.warn("No values set for columns_to_freeze or columns_to_move, \
 so no transposition performed.")
 
     return output
+
+
+def find_all_dtypes(series):
+    '''
+    Provided a pandas Series, finds all dtypes (e.g. str, int, etc.)
+    present within it. Useful for data wrangling and verifying that a
+    column has only the type of data in it that you're expecting.
+
+
+    Parameters
+    ----------
+    series: pandas Series, usually a column from a pandas DataFrame.
+
+
+    Returns
+    -------
+    Numpy array of all unique dtypes found.
+    '''
+
+    return series.apply(type).unique()
+
+
+def filter_by_dtype(series, dtype):
+    '''
+    Filters out all entries in a Series except those that match
+    the dtype provided. Useful for seeing the nature of data entries
+    that are not the dtype expected.
+
+
+    Parameters
+    ----------
+    series: pandas Series.
+
+    dtype: primitive type or Class to use as matching criterion. Only entries
+        in ``series`` that match this will be returned.
+    '''
+
+    return series.dropna()[series.dropna().apply(lambda x: type(x) == dtype)]
 
 
 def clean_ppp_data(df):
@@ -246,19 +329,25 @@ def clean_ppp_data(df):
     # Find rows where State column is numeric or is a string with numeric chars
     tqdm.pandas(desc="Finding the rows in which numeric values exist for the \
 State column...")
-    numeric_states_index = df[(df['State'].progress_apply(np.isreal)) | \
-    (df['State'].str.isnumeric())].index
+    numeric_states_index = df[(df['State'].progress_apply(np.isreal)) |
+                              (df['State'].str.isnumeric())].index
 
     logger.info(f"{(len(numeric_states_index) / len(df)) * 100}% of the \
-loans have a numeric State value")
+loans have a numeric State value. This will be corrected.")
 
     # Transpose columns by 2 to the right when State is numeric
     output = transpose_columns(
         df,
         rows_affected=numeric_states_index,
-        columns_to_freeze='LoanRange',
+        columns_to_freeze=['LoanRange'],
         transposition_distance=2
-        )
+    )
+
+    # Flag the rows that were impacted
+    output = flag_data_issues_and_fixes(output, numeric_states_index,
+                                        issue_name="StateCol_Transposition",
+                                        fixed=True)
+
 
     logger.info("Note that 'AE' is an abbreviation for the 'state' of \
 Armed Forces - Europe. It's valid.")
@@ -266,22 +355,43 @@ Armed Forces - Europe. It's valid.")
     # FI entry is actually supposed to be FL, according to ZIP
     output.loc[output['State'] == 'FI', 'State'] = 'FL'
 
+    logger.info("Setting cleaned categorical data to categorical dtype.")
+    categorical_columns = [
+        'BusinessName', 'City', 'State', 'Zip',
+        'NAICSCode', 'BusinessType', 'RaceEthnicity', 'Gender', 'Veteran',
+        'NonProfit', 'Lender', 'CD'
+    ]
 
+    output[categorical_columns] = \
+    output[categorical_columns].astype('category')
+
+    # All Job entries are numeric or NaN, but need to be coerced
+    # in some cases (because they come through as strings)
+    output['JobsRetained'] = \
+    pd.to_numeric(output['JobsRetained']).astype('Int64')
 
     return output
 
 
-
-
-#@click.command()
-#@click.argument('input_filepath', type=click.Path(exists=True))
-#@click.argument('output_filepath', type=click.Path())
-def main(input_filepath, output_filepath):
+# @click.command()
+# @click.argument('input_filepath', type=click.Path(exists=True))
+# @click.argument('output_filepath', type=click.Path())
+def main(input_filepath, output_filepath, cleaned_output=None):
     """ Runs data processing scripts to turn raw data from (../raw) into
         cleaned data ready to be analyzed (saved in ../processed).
     """
-    pull_ppp_data(input_filepath, local_copy=output_filepath)
+    logger = logging.getLogger(__name__)
+    logger.info('making final data set from raw data')
 
+    input_filepath = ''
+    df = pull_ppp_data(input_filepath, local_copy=output_filepath)
+
+    df = clean_ppp_data(df)
+
+    if cleaned_output is not None:
+        df.to_csv(cleaned_output, index=False)
+
+    return df
 
 
 
@@ -302,17 +412,15 @@ if __name__ == '__main__':
 pipeline.')
 
     parser.add_argument('-g', '--google_drive_token_path', type=str,
-        default="/home/jovyan/work/secure_keys/token.pickle",
+                        default="/home/jovyan/work/secure_keys/token.pickle",
                         help='Filepath of the token.pkl file containing \
 user credentials for Google Drive where raw data are stored.')
 
     parser.add_argument('-l', '--local_copy', type=str,
-        default=None,
+                        default=None,
                         help='Optional filepath for where resultant \
 merged data will be stored. Make sure it is a named *.csv file.')
 
     args = vars(parser.parse_args())
-
-
 
     main(args['google_drive_token_path'], args['local_copy'])
