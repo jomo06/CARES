@@ -18,3 +18,6 @@ sharedaddress_bystate <- adbs %>% filter(!is.na(Address)) %>%
             LoanCount = n()
             ) %>% filter(LoanCount > 1)
 
+sharedaddress_loans <- left_join(sharedaddress_bystate[c("Address","State","LoanCount")], adbs, by = c("Address", "State"))
+
+write.csv(sharedaddress_loans,"sharedaddress_loans.csv")
