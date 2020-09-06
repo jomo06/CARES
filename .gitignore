@@ -5,6 +5,7 @@
 data/All Data By State/
 data/All Data 0808/
 data/tidy_data/
+data/adbs_bystate/
 *.Rproj
 
 .DS_Store
