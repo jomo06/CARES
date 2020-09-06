@@ -166,11 +166,7 @@ Additionally, five entries with business name of "-"
 
 `Address`: 4,549,613 NA values
 
-`City`: 201 entries with value of "N/A" in states as follows:
-
-|:---|----|----|----|----|----|----|----|----|----|----|----|---:|
-| AZ | CA | CO | FL | IL | LA | NH | NV | NY | OH | TX | WA | WY |
-|  2 | 18 |  1 |  3 |  7 |  1 |  1 |  3 |  6 |  1 | 15 |  4 |  1 |
+`City`: 201 entries with value of "N/A" in states as follows: 
  
 `State`: 59 unique values. FI remains uncorrected, 165 NAs
 
