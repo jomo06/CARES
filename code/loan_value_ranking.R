@@ -1,7 +1,7 @@
 # Setup -------------------------------------------------------------------
 
 # Data prep should be performed first
-# source("ppp data script.R")
+# source("ppp data script.R" or "ppp_data_merge_0808.R")
 # libraries used: tidyverse, knitr
 
 # Create valid Loan Values for all rows -----------------------------------

@@ -64,7 +64,52 @@ adbs <- adbs %>%
                                           TRUE ~ "Unknown"))   
 
 
+### Enhance -------------------------------------------------------------------
+
+# Create valid Loan Values for all rows -----------------------------------
+
+# Set numeric min, mid and max values for all loan ranges, keep exact values as-is
+adbs <- adbs %>% 
+  mutate(LoanRangeMin = case_when(!is.na(LoanAmount) ~ as.numeric(LoanAmount),
+                                  is.na(LoanAmount) & LoanRange == "a $5-10 million"       ~ as.numeric( 5000000),
+                                  is.na(LoanAmount) & LoanRange == "b $2-5 million"        ~ as.numeric( 2000000),
+                                  is.na(LoanAmount) & LoanRange == "c $1-2 million"        ~ as.numeric( 1000000),
+                                  is.na(LoanAmount) & LoanRange == "d $350,000-1 million"  ~ as.numeric(  350000),
+                                  is.na(LoanAmount) & LoanRange == "e $150,000-350,000"    ~ as.numeric(  150000),
+                                  TRUE ~ NA_real_))
+
+adbs <- adbs %>% 
+  mutate(LoanRangeMax = case_when(!is.na(LoanAmount) ~ as.numeric(LoanAmount),
+                                  is.na(LoanAmount) & LoanRange == "a $5-10 million"       ~ as.numeric(10000000),
+                                  is.na(LoanAmount) & LoanRange == "b $2-5 million"        ~ as.numeric( 5000000),
+                                  is.na(LoanAmount) & LoanRange == "c $1-2 million"        ~ as.numeric( 2000000),
+                                  is.na(LoanAmount) & LoanRange == "d $350,000-1 million"  ~ as.numeric( 1000000),
+                                  is.na(LoanAmount) & LoanRange == "e $150,000-350,000"    ~ as.numeric(  350000),
+                                  TRUE ~ NA_real_))
+
+adbs <- adbs %>% 
+  mutate(LoanRangeMid = case_when(!is.na(LoanAmount) ~ as.numeric(LoanAmount),
+                                  is.na(LoanAmount) & LoanRange == "a $5-10 million"       ~ as.numeric( 7500000),
+                                  is.na(LoanAmount) & LoanRange == "b $2-5 million"        ~ as.numeric( 3500000),
+                                  is.na(LoanAmount) & LoanRange == "c $1-2 million"        ~ as.numeric( 1500000),
+                                  is.na(LoanAmount) & LoanRange == "d $350,000-1 million"  ~ as.numeric(  675000),
+                                  is.na(LoanAmount) & LoanRange == "e $150,000-350,000"    ~ as.numeric(  250000),
+                                  TRUE ~ NA_real_))
+
+
+# Rank All by LoanRangeMin  -----------------------------------------------
+# we can then subset this at any grain and still get accurate rank order results
+
+adbs$LoanRange_Rank <- rank(-adbs$LoanRangeMin, ties.method = "min") # 1 would be largest value in this case, and will be assigned to all 4,000 or so 5-10million dollar loan entries
+
+
+# Add NAICS join from Ken Morales
+naics_df = read_csv("data/tidy_data/naics_clean.csv", col_types = cols(.default = "c"))
+
+adbs <- adbs %>% left_join(naics_df)
+
 ### Tidy Workspace ---------------------------------------------------------
 
 rm(csv_dir,
-   csv_files)
+   csv_files,
+   naics_df)
