@@ -123,8 +123,11 @@ Variables:
 # preliminary notes from 0808 dataset
 
 `total rows`: 5,212,128
+
 `LoanRange`: 4,549,613 NA values
+
 `BusinessName`: 4,549,613 NA values
+
 Also present are some invalid or strange unique business names:
 - 1970
 - 1990
@@ -147,22 +150,25 @@ Also present are some invalid or strange unique business names:
 - NOT AVAILABLE [5 loans]
 
 and here are business names that appear MANY times:
-- FIRST UNITED METHODIST CHURCH						35
-- FIRST BAPTIST CHURCH								24
-- THE ROMAN CATHOLIC WELFARE CORPORATION OF OAKLAND	23
-- THE CATHOLIC BISHOP OF CHICAGO						19
-- TRINITY LUTHERAN CHURCH								19
-- IMMACULATE CONCEPTION CHURCH						13
-- CALVARY BAPTIST CHURCH								11
-- CHRIST UNITED METHODIST CHURCH						11
-- SACRED HEART SCHOOL									11
-- FIRST PRESBYTERIAN CHURCH							10
+- FIRST UNITED METHODIST CHURCH							[35 loans]
+- FIRST BAPTIST CHURCH									[24 loans]
+- THE ROMAN CATHOLIC WELFARE CORPORATION OF OAKLAND		[23 loans]
+- THE CATHOLIC BISHOP OF CHICAGO						[19 loans]
+- TRINITY LUTHERAN CHURCH								[19 loans]
+- IMMACULATE CONCEPTION CHURCH							[13 loans]
+- CALVARY BAPTIST CHURCH								[11 loans]
+- CHRIST UNITED METHODIST CHURCH						[11 loans]
+- SACRED HEART SCHOOL									[11 loans]
+- FIRST PRESBYTERIAN CHURCH								[10 loans]
 
 
 Additionally, five entries with business name of "-"
 
 `Address`: 4,549,613 NA values
-`City`: 201 entries with value of "N/A" in states as follows
+
+`City`: 201 entries with value of "N/A" in states as follows:
+
+|:---|----|----|----|----|----|----|----|----|----|----|----|---:|
 | AZ | CA | CO | FL | IL | LA | NH | NV | NY | OH | TX | WA | WY |
 |  2 | 18 |  1 |  3 |  7 |  1 |  1 |  3 |  6 |  1 | 15 |  4 |  1 |
  
@@ -288,7 +294,9 @@ Additionally, five entries with business name of "-"
 |WV   |  18,065|
 |WY   |  13,584|
 
-############## these notes apply to the 0630 dataset specifically #####
+
+#### these notes below apply to the 0630 dataset specifically
+
 #### LoanRange
 
 `LoanRange` is missing from all state data, giving the 86.5% missing
