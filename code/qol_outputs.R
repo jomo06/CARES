@@ -7,7 +7,7 @@
 
 adbs %>%
     group_by(State) %>%
-    group_walk(~ write_csv(.x, file.path("data/adbs_bystate", paste0("PPP Loans 0808 Enhanced ", .y$State, ".csv"))))
+    group_walk(~ write_csv(.x, file.path("data/adbs_bystate", paste0("PPP Loans 0808 Enhanced ", .y$State, ".csv"))), .keep = TRUE)
   
   
 ### create outputs per state of businesses with shared addresses ---------------
