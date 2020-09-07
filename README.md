@@ -93,9 +93,9 @@ WARNING: before doing any of this, make sure your Docker Desktop has been given 
 
 ### Structure
 
-Rows: 4,885,388
+Rows: 4,885,388 (0630 dataset); 5,212,128 (0808 dataset) 
 
-Potential duplicate rows: ~4,353 (still investigating)
+Potential duplicate rows: ~4,353 (still investigating - first dataset)
 
 Variables:
 
@@ -118,6 +118,180 @@ Variables:
 |Lender        |          0|          0.0|                                         |
 |CD            |          0|          0.0|                                         |
 |LoanAmount    |     661218|         13.5| no values for loan amounts over 150K    |
+
+
+# preliminary notes from 0808 dataset
+
+`total rows`: 5,212,128
+
+`LoanRange`: 4,549,613 NA values
+
+`BusinessName`: 4,549,613 NA values
+
+Also present are some invalid or strange unique business names:
+- 1970
+- 1990
+- 1999
+- 3945
+- 95112
+- 995782.5
+- 200222222
+- 462048120
+- 2815496822
+- 8187853713
+- 8436795355
+- 9148415738
+- 80028795173
+- #NAME? [2 loans]
+- 4/1/2002
+- 9/1/2014
+- NEW APPLICATION [51 loans]
+- N/A [5 loans]
+- NOT AVAILABLE [5 loans]
+
+and here are business names that appear MANY times:
+- FIRST UNITED METHODIST CHURCH							[35 loans]
+- FIRST BAPTIST CHURCH									[24 loans]
+- THE ROMAN CATHOLIC WELFARE CORPORATION OF OAKLAND		[23 loans]
+- THE CATHOLIC BISHOP OF CHICAGO						[19 loans]
+- TRINITY LUTHERAN CHURCH								[19 loans]
+- IMMACULATE CONCEPTION CHURCH							[13 loans]
+- CALVARY BAPTIST CHURCH								[11 loans]
+- CHRIST UNITED METHODIST CHURCH						[11 loans]
+- SACRED HEART SCHOOL									[11 loans]
+- FIRST PRESBYTERIAN CHURCH								[10 loans]
+
+
+Additionally, five entries with business name of "-"
+
+`Address`: 4,549,613 NA values
+
+`City`: 201 entries with value of "N/A" in states as follows: 
+ 
+`State`: 59 unique values. FI remains uncorrected, 165 NAs
+
+`Zip`: 36675 unique values. 196 NAs. 
+
+`NAICSCode`: 133,144 NAs. 86,358 have value of 999990 ("Unclassifiable")
+
+`BusinessType`: 4,570 NAs
+
+`RaceEthnicity`: 4,675,327 
+
+`Gender` 4,096,373            
+
+`Veteran`: 4,450,315       
+
+`NonProfit:` 5,029,544 NAs (only other value is Y)
+
+`JobsRetained`: no longer exists as a variable, likely due to embarrasement at inaccuracy. Replacement variable is called "JobsReported": 337,878  NAs, 
+
+`DateApproved`: 04/03/2020 to 08/08/2020
+
+`Lender`: 0 NAs
+
+`CD`: 1,017 NAs, some definite strangess around CDs not matching to State
+
+`LoanAmount`: 662,515 NAs
+
+
+|LoanRangeUnified      |      Freq|
+|:---------------------|---------:|
+|a $5-10 million       |     4,734|
+|b $2-5 million        |    24,248|
+|c $1-2 million        |    53,218|
+|d $350,000-1 million  |   199,679|
+|e $150,000-350,000    |   380,636|
+|f $125,000 - $150,000 |   119,128|
+|g $100,000 - $125,000 |   172,590|
+|h  $75,000 - $100,000 |   260,379|
+|i  $50,000 -  $75,000 |   423,406|
+|j  $25,000 -  $50,000 |   830,119|
+|k   $1,000 -  $25,000 | 2,712,932|
+|l     $100 -    $1000 |    30,558|
+|m      $10 -     $100 |       465|
+|n           Up to $10 |        36|
+
+
+|JobsReported_Grouped |      Freq|
+|:--------------------|---------:|
+|a 400 - 500          |     7,103|
+|b 300 - 400          |     5,715|
+|c 200 - 300          |    13,653|
+|d 100 - 200          |    46,436|
+|e  50 - 100          |   103,145|
+|f  25 -  50          |   229,515|
+|g  10 -  25          |   588,103|
+|h   5 -  10          |   685,136|
+|i   2 -   5          | 1,348,223|
+|j         1          | 1,248,997|
+|k      Zero          |   598,223|
+|l  Negative          |         1|
+
+
+|State|    Freq|
+|:----|-------:|
+|AE   |       1|
+|AK   |  12,085|
+|AL   |  70,328|
+|AR   |  43,675|
+|AS   |     296|
+|AZ   |  85,767|
+|CA   | 623,345|
+|CO   | 109,171|
+|CT   |  64,627|
+|DC   |  13,512|
+|DE   |  13,205|
+|FI   |       1|
+|FL   | 432,883|
+|GA   | 174,425|
+|GU   |   2,208|
+|HI   |  25,096|
+|IA   |  61,415|
+|ID   |  31,055|
+|IL   | 225,433|
+|IN   |  83,241|
+|KS   |  53,757|
+|KY   |  50,671|
+|LA   |  78,868|
+|MA   | 118,390|
+|MD   |  87,009|
+|ME   |  28,309|
+|MI   | 128,161|
+|MN   | 102,349|
+|MO   |  95,595|
+|MP   |     482|
+|MS   |  48,542|
+|MT   |  23,907|
+|NC   | 129,285|
+|ND   |  20,510|
+|NE   |  44,072|
+|NH   |  24,742|
+|NJ   | 157,402|
+|NM   |  23,037|
+|NV   |  45,770|
+|NY   | 348,867|
+|OH   | 149,152|
+|OK   |  66,211|
+|OR   |  66,350|
+|PA   | 173,543|
+|PR   |  39,543|
+|RI   |  17,943|
+|SC   |  67,166|
+|SD   |  23,493|
+|TN   |  99,574|
+|TX   | 417,266|
+|UT   |  52,274|
+|VA   | 114,572|
+|VI   |   2,057|
+|VT   |  12,401|
+|WA   | 107,662|
+|WI   |  89,613|
+|WV   |  18,065|
+|WY   |  13,584|
+
+
+#### these notes below apply to the 0630 dataset specifically
 
 #### LoanRange
 
