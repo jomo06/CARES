@@ -2,10 +2,11 @@
 ### john.patrick.mccambridge@gmail.com
 ### This script combines all PPP csvs into a single unified file and create basic needed variables to allow analysis across all fields for all rows
 
+
+
 ### Working Directory Reminder  ---------------------------------------------
 
 cat(sprintf("This script expects your working directory to be the base directory of the /DataKind-DC/CARES/ github repo structure, i.e., /CARES\nCurrent working directory: %s\n", getwd()))
-
 
 ### Libraries ---------------------------------------------------------------
 
@@ -21,8 +22,8 @@ csv_files <- list.files(csv_dir, full.names = T, recursive = T, pattern = ".*.cs
 
 # read in each CSV as character values, to allow for a clean import, attach the name of the data source file
 adbs <- map_df(csv_files, ~read_csv(.x, col_types = cols(.default = "c")) %>%
-                  mutate(source_file = str_remove_all(.x, ".*/"))
-               )
+                 mutate(source_file = str_remove_all(.x, ".*/"))
+)
 
 ### Clean -------------------------------------------------------------------
 
@@ -64,3 +65,4 @@ adbs <- adbs %>%
 
 rm(csv_dir,
    csv_files)
+
