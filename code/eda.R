@@ -121,3 +121,8 @@ adbs %>%
 
 # NAICS over time
 
+adbs %>% 
+  filter(is.na(naics_lvl_1)) %>% 
+  count(NAICSCode) %>% 
+  mutate(perc = n / nrow(adbs) * 100)
+

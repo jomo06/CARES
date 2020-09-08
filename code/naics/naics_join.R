@@ -21,8 +21,8 @@ source(file.path("code","naics","naics_clean.R"))
 # Some of the 6-digit NAICS codes in the PPP loan data don't match up to the 
 # 2017 NAICS code
 
-naics_fails = adbs %>% 
-  anti_join(naics_df, by = "NAICSCode") %>% 
+naics_fails = adbs_raw %>% 
+  anti_join(naics_df, by = "NAICSCode") %>% count() 
   filter(!is.na(NAICSCode)) %>% 
   pull(NAICSCode) %>% 
   unique() %>% 
