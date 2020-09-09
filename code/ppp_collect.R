@@ -1,8 +1,11 @@
 #' Download PPP data from DataKind Google Drive
 #'
+#' @author kbmorales at protonmail dot com
+#'
 #' @param version Either 1 for most revent version or 2 for oldest data. If not
 #' provided, user is asked.
-#'
+#' 
+#' @author kbmorales
 #' @export
 #'
 #' @examples
@@ -27,7 +30,7 @@ ppp_collect = function(version=NULL) {
   
   cat(paste0("This will save data to ~/data/All Data ",
              file_suffix,
-             "/\n"))
+             "\n"))
   cat('It will download over 600 MB of files.\n')
   cat('Any existing files will be overwritten.\n')
   
@@ -36,9 +39,8 @@ ppp_collect = function(version=NULL) {
   
   if (proceed!=1) stop("Canceling download.")
   
-  if (!dir.exists('data')) dir.create('data')
   datapath=paste('data/All Data',file_suffix)
-  if (!dir.exists(datapath)) dir.create(datapath)
+  if (!dir.exists(datapath)) dir.create(datapath, recursive = T)
   
   # Pull list of PPP .csv filename
   files_ls <- drive_ls(
