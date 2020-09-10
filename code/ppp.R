@@ -1,23 +1,19 @@
-#' Download PPP data from DataKind Google Drive
+#' Fxns for downloading and cleaning data from DataKind Google Drive
 #'
 #' @author kbmorales at protonmail dot com
 #'
-#' @param version Either 1 for most revent version or 2 for oldest data. If not
-#' provided, user is asked.
-#' 
-#' @author kbmorales
-#' @export
-#'
-#' @examples
-#' \dontrun {
-#' ppp_collect()
-#' }
 
 ppp_collect = function(version=NULL) {
+  # collect PPP data from DataKind Google Drive
+  
+  # Parameter:
+  # Version either 1 for most revent version or 2 for oldest data. If not 
+  # provided will ask
   
   # Ask version of data wanted
   if (is.null(version)) {
-    version = menu(c("Most recent (2020-08-08)", "First release (2020-07-06?)"),
+    version = menu(c("Most recent (2020-08-08)", 
+                     "First release (2020-07-06?)"),
                    title = "Which version of the PPP data would you like to download?")
   }
   
@@ -59,4 +55,28 @@ ppp_collect = function(version=NULL) {
                    overwrite = TRUE)  
   }
   
+}
+
+naics_collect = function(){
+  # Downloads final NAICS file from DataKind Google Drive
+  # Ready for joining with PPP data
+  
+  cat("This will save data to ~/data/tidy_data\n")
+  # cat('It will download over 600 MB of files.\n')
+  cat('Any existing files will be overwritten.\n')
+  
+  proceed = menu(c("Yes", "Cancel"),
+                 title = "Proceed?")
+  
+  if (proceed!=1) stop("Canceling download.")
+  
+  datapath = 'data/tidy_data'
+  if (!dir.exists(datapath)) dir.create(datapath,recursive = T)
+  
+  # Search for shared folder -- takes a minute
+  drive_download(drive_get("adbs_naics.csv"),
+                 path = file.path("data",
+                                  "tidy_data",
+                                  "naics_clean.csv"),
+                 overwrite = T)
 }
