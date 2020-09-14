@@ -1,7 +1,9 @@
+# R
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
+data-raw/
 data/All Data By State/
 data/All Data 0808/
 data/tidy_data/
