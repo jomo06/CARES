@@ -127,15 +127,17 @@ setwd("C:/Users/rcarder/Documents/dev/CARES/data/demographics")
 
 write.csv(get(paste(geoLevel,"Demographics",sep='')),paste(geoLevel,"Demographics.csv",sep=''), row.names = FALSE)
 
-##change root to where you have data downloaded, or to the google drive directly (better)
-reldir<-"C:/Users/rcarder/Documents/dev/All Data by State/All Data by State"
+### Read --------------------------------------------------------------------
+setwd("C:/Users/rcarder/Documents/dev/All Data by State")
 
-dat_files <- list.files(reldir, full.names = T, recursive = T, pattern = ".*.csv") # scan through all directories and subdirectories for all CSVs
+# set relative directory to search then scan through subdirectories for CSVs
+csv_dir <- paste(getwd(),"/All Data 0808", sep="")
+cat(sprintf("Looking for data files in: %s\n", csv_dir))
+csv_files <- list.files(csv_dir, full.names = T, recursive = T, pattern = ".*.csv") 
 
-# read in each CSV, all as character values, to allow for a clean import with no initial manipulation
-# for each file, attached the name of the data source file
-adbs <- map_df(dat_files, ~read_csv(.x, col_types = cols(.default = "c")) %>%
-                 mutate(source_file = str_remove_all(.x, "data/20200722/All Data by State/All Data by State/"))
+# read in each CSV as character values, to allow for a clean import, attach the name of the data source file
+adbs <- map_df(csv_files, ~read_csv(.x, col_types = cols(.default = "c")) %>%
+                 mutate(source_file = str_remove_all(.x, ".*/"))
 )
 
 # Clean -------------------------------------------------------------------
@@ -184,42 +186,14 @@ adbs <- adbs %>%
                                               is.na(LoanAmount) & LoanRange=="e $150,000-350,000" ~ 350000))
 
 n_distinct(adbs$Zip)
-
-
-### Create Jobs Retained cuts
-adbs <- adbs %>%
-  mutate(JobsRetained_Grouped = case_when(as.numeric(JobsRetained) > 400 & as.numeric(JobsRetained) <= 500 ~ "a 400 - 500",
-                                          as.numeric(JobsRetained) > 300 & as.numeric(JobsRetained) <= 400 ~ "b 300 - 400",
-                                          as.numeric(JobsRetained) > 200 & as.numeric(JobsRetained) <= 300 ~ "c 200 - 300",
-                                          as.numeric(JobsRetained) > 100 & as.numeric(JobsRetained) <= 200 ~ "d 100 - 200",
-                                          as.numeric(JobsRetained) >  50 & as.numeric(JobsRetained) <= 100 ~ "e  50 - 100",
-                                          as.numeric(JobsRetained) >  25 & as.numeric(JobsRetained) <=  50 ~ "f  25 -  50",
-                                          as.numeric(JobsRetained) >  10 & as.numeric(JobsRetained) <=  25 ~ "g  10 -  25",
-                                          as.numeric(JobsRetained) >   5 & as.numeric(JobsRetained) <=  10 ~ "h   5 -  10",
-                                          as.numeric(JobsRetained) >   1 & as.numeric(JobsRetained) <=   5 ~ "i   2 -   5",
-                                          as.numeric(JobsRetained) >   0 & as.numeric(JobsRetained) <=   1 ~ "j         1",
-                                          as.numeric(JobsRetained) ==     0                                ~ "k      Zero",
-                                          as.numeric(JobsRetained) <      0                                ~ "l  Negative",
-                                          is.na(JobsRetained) ~ NA_character_,
-                                          TRUE ~ "Unknown"))   
+n_distinct(adbs$CD)
 
 
 
-
-
-
-
-##Creating Summary Sets Using mid range estimate, plus join ZCTAs to ZIP level tables
-
-
-
-#shapedir<-"C:/Users/rcarder/Documents/dev/All Data by State/congressionaldistricts/tl_2018_us_cd116.shp"
-#congressional<-st_read(shapedir)
-
-
-setwd("C:/Users/rcarder/Documents/dev/CARES/data/Lookup Tables")
 
 ##load election data and create join fields; filter to just 2018 election; calculate difference between democrat and republican vote percentages
+setwd("C:/Users/rcarder/Documents/dev/CARES/data/Lookup Tables")
+
 electiondataraw<-read.csv("HouseElections.csv")%>%
   mutate(district=str_pad(district, width=2, side="left", pad="0"),
          state_fips=str_pad(state_fips, width=2, side="left", pad="0"),
@@ -261,14 +235,16 @@ CDAggregate<-adbs%>%
             Mid=sum(LoanAmount_Estimate_Mid),
             High=sum(LoanAmount_Estimate_High))%>%
   mutate(state=substr(CD,1,2),
-         district=substr(CD,6,7))%>%
+         district=substr(CD,4,5))%>%
   left_join(StateAbbrs,by=c("state"="state_po"))%>%
-  mutate(GEOID=paste(state_fips,district,sep=''))%>%
+  mutate(GEOID=paste(state_fips,district,sep=''),
+         GEOID=ifelse(state=="DC","1198",GEOID),   #DC's CD and GEOID didnt match
+         GEOID=ifelse(state=="PR","7298",GEOID))%>%  #PR's CD and GEOID didnt match
   dplyr::select(2,3,4,9)
 
-sum(CDAggregate$Low) ##395 billion
-sum(CDAggregate$Mid) ##573 billion
-sum(CDAggregate$High) ##752 billion
+sum(CDAggregate$Low) ##399 billion
+sum(CDAggregate$Mid) ##577 billion
+sum(CDAggregate$High) ##755 billion
 ##Actual amount of total PPP loan amount is 659 billion
 
 
@@ -285,10 +261,9 @@ MasterDistricts<-`congressional districtDemographics`%>%
          percentileMid=ntile(MidPerCap,100),
          percentileHigh=ntile(HighPerCap,100))
   
-
 sum(MasterDistricts$Low,na.rm = TRUE)/sum(CDAggregate$Low) 
 sum(MasterDistricts$Mid,na.rm = TRUE)/sum(CDAggregate$Mid) 
-sum(MasterDistricts$High,na.rm = TRUE)/sum(CDAggregate$High) ##99% accounted for!!
+sum(MasterDistricts$High,na.rm = TRUE)/sum(CDAggregate$High) ##99.9% accounted for!
 
 ##Create a set without geometry to speed up non spatial analyses
 MasterDistrictsAnalysis<-st_drop_geometry(MasterDistricts)
@@ -374,8 +349,8 @@ MasterDistrictsAnalysis%>%
 
 ##Race v Loan Total - Color by Voting and Race
 MasterDistrictsAnalysis%>%
-  ggplot(aes(x=inc_pct_poverty,y=Mid,color=DemPlus))+
-  scale_color_gradient("% Dem",low = "red", high = "blue", labels = percent)+
+  ggplot(aes(x=inc_pct_poverty,y=Mid,color=race_pct_nonwhitenh))+
+  scale_color_gradient("% Non-white",low = "yellow", high = "red", labels = percent)+
   scale_x_continuous(labels = scales::percent_format(accuracy = 1))+
   scale_y_continuous(labels = scales::dollar_format())+
   geom_point(alpha=.9)+geom_smooth(
@@ -387,8 +362,8 @@ MasterDistrictsAnalysis%>%
 
 
 MasterDistrictsAnalysis%>%
-  filter(state_po=="TX"|state_po=="FL"|state_po=="NY"|state_po=="CA"|state_po=="IL"|state_po=="PA")%>%
-  ggplot(aes(x=DemPlus,y=MidPerCap,color=DemPlus))+
+  filter(state_po=="MI"|state_po=="WI"|state_po=="IL"|state_po=="MN"|state_po=="OH"|state_po=="PA")%>%
+  ggplot(aes(x=race_pct_nonwhitenh,y=MidPerCap,color=race_pct_nonwhitenh))+
   scale_color_gradient("Voting",low = "red", high = "blue", labels = percent)+
   scale_x_continuous(labels = scales::percent_format(accuracy = 1))+
   scale_y_continuous(labels = scales::dollar_format())+
