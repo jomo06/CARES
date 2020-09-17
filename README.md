@@ -7,11 +7,11 @@ Data files can be downloaded from the [DataKind Google Drive](https://drive.goog
 ## TOC
 
 1. [Contributing.](#cont)
-2. [Directory Structure.](#dir)
-3. [Using Docker](#docker)
-3. [Data Sources.](#data)
-4. [PPP Data Dictionary](#ppp)
-5. [Enhancements](#enh)
+2. [Data Sources.](#data)
+3. [Directory Structure.](#dir)
+4. [Using Docker](#docker)
+5. [PPP Data Dictionary](#ppp)
+6. [Enhancements](#enh)
 
 ---
 
@@ -25,13 +25,20 @@ Please ask a fellow volunteer to review your code with a [pull request](https://
 or [@kbmorales](https://github.com/kbmorales) if you don't know who to ask to
 review!
 
+## Data Sources
+
+- Small Business Administration PPP Loan Data:
+  - [Latest release](https://sba.app.box.com/s/ahn2exwfebgqruk714v3hnf75qdap3du)
+  - [Original release](https://sba.app.box.com/s/tvb0v5i57oa8gc6b5dcm9cyw7y2ms6pp)
+- NAICS code dictionaries [US Census NAICS Files](https://www.census.gov/eos/www/naics/downloadables/downloadables.html)
+- [Data catlog of other sources](https://docs.google.com/spreadsheets/d/1d3wVJTFg3zjTVyjzy8hADxxTp1q5rDVbRKDJ6WyyNZk/edit#gid=0) assembled by Dave RM
+
 <a name="dir"/>
 
 ## Directory Structure
 
 - `bin/` for in production executable files
-  - `bin/pull_data.R` authenticates with Google Drive, downloads PPP flat files
-  - `bin/ppp_data_merge.R` reads in PPP flat files
+  - `bin/setup.R` sets up PPP data set in R for analysis
 - `code/` folder with individual project subfolders on the CARES act data.
 Enhancements people make can go here, grouped by "project". A project is any
 discreet enhancement to the data, like adding in NAICS code industry
@@ -78,14 +85,6 @@ WARNING: before doing any of this, make sure your Docker Desktop has been given 
 2. The working directory in which you launch your container via `docker-compose.yml` will be mounted inside the Docker container, meaning that you'll see any notebooks, scripts, etc. that you already had in that directory when you spun up the container.
 3. Check the kernel you're using for any new notebooks to ensure that it's set to the proper conda environment.
 4. In order to utilize plotly visualization within notebooks in JupyterLab, you need to agree to do the re-build that you are prompted to do when first opening up Jupyterlab in the container. After agreeing, wait a minute or two until it prompts you to reload JupyterLab. Once you do so, plotly functionality should be enabled for that container.
-
-
-
-## Data Sources
-
-- PPP Loan Data: [Small Business Administration's DropBox](https://sba.app.box.com/s/tvb0v5i57oa8gc6b5dcm9cyw7y2ms6pp)
-- NAICS code dictionary [US Census NAICS Files](https://www.census.gov/eos/www/naics/downloadables/downloadables.html)
-- [Data catlog of other sources](https://docs.google.com/spreadsheets/d/1d3wVJTFg3zjTVyjzy8hADxxTp1q5rDVbRKDJ6WyyNZk/edit#gid=0) assembled by Dave RM
 
 <a name="ppp"/>
 
