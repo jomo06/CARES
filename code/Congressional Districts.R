@@ -11,7 +11,9 @@ library(tidyverse)
 library(jsonlite)
 library(geojsonio)
 library(hrbrthemes)
+library(formattable)
 library(scales)
+library(ggrepel)
 library(ggthemes)
 #This script extracts ACS 5-year estimates at the ZIP level group using the tidycensus package. To run tidycensus, you first need
 #to set up a Census API key and run census_api_key(). Set working directory
@@ -24,9 +26,11 @@ library(ggthemes)
 setwd("C:/Users/rcarder/Documents/dev/CARES/data/Lookup Tables")
 cities<-read.csv("cities.csv") ##to help provide context to state maps
 
-##removed census key. Sign up for one for free at https://api.census.gov/data/key_signup.html
-census_api_key('', install=TRUE, overwrite = TRUE)
 
+##removed census key. Sign up for one for free at https://api.census.gov/data/key_signup.html
+census_api_key("b2e47f1f1e9c7115a34a02992c149628712ecff8")#, install=TRUE, overwrite = TRUE)
+
+Sys.getenv("census_api_key")
 
 ##To explore fields available in the ACS
 acs_table <- load_variables(2018, "acs5", cache = TRUE)
@@ -35,7 +39,7 @@ acs_table <- load_variables(2018, "acs5", cache = TRUE)
 ###Choose Geography Options###
 
 ##Geographic Level (county, state, tract, zcta (ZIP), block group, congressional district, public use microdata area)
-geoLevel='congressional district'  ##Zip Codes with approximate tabulation areas (ZIP codes are not actual polygons)
+geoLevel='county'  ##Zip Codes with approximate tabulation areas (ZIP codes are not actual polygons)
 
 ##Specific State? Leaving NULL will pull whole US. For anything more granular than census tracts, specify a state.
 state=NULL
@@ -98,17 +102,29 @@ assign(paste(geoLevel,"Demographics",sep=''),get_acs(geography = geoLevel,
   spread(key = 'variable', value = 'estimate') %>% 
   mutate(
     total_population=B01003_001,
-    tot_population_race = B02001_001,
-    pop_nonwhite=B02001_001-B02001_002,
-    pop_nonwhitenh=B03002_001-B03002_003,
-    race_pct_white = B02001_002/B02001_001,
-    race_pct_whitenh = B03002_003/B03002_001,
-    race_pct_nonwhite = 1 - race_pct_white,
-    race_pct_nonwhitenh = 1 - race_pct_whitenh,
-    race_pct_black = B02001_003/B02001_001,
-    race_pct_aapi = (B02001_005+B02001_006)/B02001_001,
-    race_pct_native = B02001_004/B02001_001,
-    race_pct_hisp = B03002_012/B03002_001) %>%
+    tot_population_race_B02001_001 = B02001_001,
+    tot_population_race_B03002_001 = B03002_001,
+    race_pop_white_alone = B02001_002,
+    race_pop_black_alone = B02001_003,
+    race_pop_AmIndian_alone = B02001_004,
+    race_pop_asian_alone = B02001_005,
+    race_pop_hawaiian_alone = B02001_006,
+    race_pop_other_alone = B02001_007,
+    race_pop_2orMore = B02001_008,
+    race_pop_2orMoreOther = B02001_009,
+    race_pop_nonwhite=B02001_001-B02001_002,
+    race_pop_nonwhite_nonhispanic=B03002_001-B03002_003,
+    race_pct_white_alone = B02001_002/B02001_001,
+    race_pct_black_alone = B02001_003/B02001_001,
+    race_pct_aapi_alone = (B02001_005+B02001_006)/B02001_001,
+    race_pct_AmericanIndian_alone = B02001_004/B02001_001,
+    race_pct_other_alone = B02001_007/B02001_001,
+    race_pct_2orMore = (B02001_008)/B02001_001,
+    race_pct_hisp = B03002_012/B03002_001,
+    race_pct_nonhisp = B03002_002/B03002_001,
+    race_pct_white_nonhispanic = B03002_003/B03002_001,
+    race_pct_nonwhite_nonhispanic = 1 - race_pct_white_nonhispanic,
+    ) %>%
   mutate(
     tot_population_income = B17021_001,
     in_poverty = B17021_002) %>%
@@ -119,7 +135,7 @@ assign(paste(geoLevel,"Demographics",sep=''),get_acs(geography = geoLevel,
   left_join(age, by="GEOID")%>%
   dplyr::select(-starts_with("B0"))%>%
   dplyr::select(-starts_with("B1"))%>%
-  dplyr::select(-15,-23,-24,-25,-26,-27)%>%
+ dplyr::select(-38)%>%
   mutate(GEOID=as.character(GEOID)))
 
 ##writes file to repo. Be mindful of file size. Not sure if best place for these is in repo or in google drive folder.
@@ -190,9 +206,16 @@ n_distinct(adbs$CD)
 
 
 
-
+###CONGRESSIONAL DISTRICTS###
 ##load election data and create join fields; filter to just 2018 election; calculate difference between democrat and republican vote percentages
 setwd("C:/Users/rcarder/Documents/dev/CARES/data/Lookup Tables")
+
+legislators<-read.csv("legislators-current.csv")%>%
+  mutate(district=str_pad(district, width=2, side="left", pad="0"),
+         Join=paste(state,district,sep=''),
+         Name=paste(first_name,last_name,sep=' '))%>%
+  filter(type=="rep")%>%
+  dplyr::select(6,13,35)
 
 electiondataraw<-read.csv("HouseElections.csv")%>%
   mutate(district=str_pad(district, width=2, side="left", pad="0"),
@@ -203,16 +226,18 @@ electiondataraw<-read.csv("HouseElections.csv")%>%
 unique(electiondataraw[electiondataraw$totalvotes>350000,]$party)
 
 electiondata<-electiondataraw%>%
-  mutate(GEOID=paste(state_fips,district,sep=''))%>%
-  dplyr::select(13,20,21)%>%
+  mutate(GEOID=paste(state_fips,district,sep=''),
+         Join=paste(state_po,district,sep=''))%>%
+  dplyr::select(13,20,21,22)%>%
   mutate(party=ifelse(party=="democrat"|party=="democratic-farmer-labor","democrat",
                       ifelse(party=="republican"|party=="libertarian","republican","other")))%>% ##note im including libertarian with republican.
   mutate(party=ifelse(is.na(party),"other",party))%>%
-  group_by(GEOID,party)%>%
+  group_by(GEOID,Join,party)%>%
   summarize(votePer=sum(votePer))%>%
-  pivot_wider(names_from = party,values_from = votePer)
+  pivot_wider(names_from = party,values_from = votePer)%>%
+  left_join(legislators,by="Join")
 
-electiondata[is.na(electiondata)]<-0
+electiondata[, 3:5][is.na(electiondata[, 3:5])]<-0
 
 electiondata<-electiondata%>%
   mutate(DemPlus=democrat-republican,
@@ -248,6 +273,9 @@ sum(CDAggregate$High) ##755 billion
 ##Actual amount of total PPP loan amount is 659 billion
 
 
+
+
+
 ##join PPP and election data to demographics file with geometry
 
 MasterDistricts<-`congressional districtDemographics`%>%
@@ -268,8 +296,87 @@ sum(MasterDistricts$High,na.rm = TRUE)/sum(CDAggregate$High) ##99.9% accounted f
 ##Create a set without geometry to speed up non spatial analyses
 MasterDistrictsAnalysis<-st_drop_geometry(MasterDistricts)
 
+
+###COUNTIES###
+
+setwd("C:/Users/rcarder/Documents/dev/CARES/data/Lookup Tables")
+countyelections<-read.csv("election-context-2018.csv")%>%
+  mutate(fips=str_pad(fips, width=5, side="left", pad="0"))%>%
+  dplyr::select(1:7)
+
+countyFIPS<-read.csv("countyFIPS.csv")%>%
+  mutate(GEOID=str_pad(GEOID, width=5, side="left", pad="0"))
+
+Zip2County<-read.csv("ZIP_to_COUNTY.csv")%>%
+  mutate(Zip=str_pad(ZIP, width=5, side="left", pad="0"))
+
+##Aggregate PPP by ZIP
+ZIPAggregate<-adbs%>%
+  group_by(Zip)%>%
+  summarize(Low=sum(LoanAmount_Estimate_Low),
+            Mid=sum(LoanAmount_Estimate_Mid),
+            High=sum(LoanAmount_Estimate_High))%>%
+  left_join(Zip2County)
+
+ZIPAggregate[, 7:10][is.na(ZIPAggregate[, 7:10])]<-1
+
+ZIPAggregate<-ZIPAggregate%>%
+  mutate(LowCounty=Low*TOT_RATIO,
+         MidCounty=Mid*TOT_RATIO,
+         HighCounty=High*TOT_RATIO)
+
+
+
+sum(ZIPAggregate$LowCounty) ##399 billion
+sum(ZIPAggregate$MidCounty) ##577 billion
+sum(ZIPAggregate$HighCounty) ##755 billion
+
+CountyAggregate<-ZIPAggregate%>%
+  group_by(COUNTY)%>%
+  summarise(Low=sum(LowCounty),
+            Mid=sum(MidCounty),
+            High=sum(HighCounty))%>%
+  mutate(COUNTY=str_pad(COUNTY, width=5, side="left", pad="0"))
+  
+MasterCounties<-countyDemographics%>%
+  left_join(countyFIPS,by=c("GEOID"="GEOID"))%>%
+  left_join(CountyAggregate,by=c("GEOID"="COUNTY"))%>%
+  left_join(countyelections,by=c("GEOID"="fips"))%>%##DC and 3 non-districts didnt have election data
+  mutate(LowPerCap=Low/total_population,
+         MidPerCap=Mid/total_population,
+         HighPerCap=High/total_population)%>%
+  mutate(percentileLow=ntile(LowPerCap,100),  ##percentiles for 
+         percentileMid=ntile(MidPerCap,100),
+         percentileHigh=ntile(HighPerCap,100))
+  
+
+
+sum(CountyAggregate$Low) ##399 billion
+sum(CountyAggregate$Mid) ##577 billion
+sum(CountyAggregate$High) ##755 billion
+
+sum(MasterCounties$Low,na.rm = TRUE)/sum(CountyAggregate$Low) 
+sum(MasterCounties$Mid,na.rm = TRUE)/sum(CountyAggregate$Mid) 
+sum(MasterCounties$High,na.rm = TRUE)/sum(CountyAggregate$High) #99.87% accounted for
+
+MasterCountiesAnalysis<-st_drop_geometry(MasterCounties)
+
+#write final datasets
 setwd("C:/Users/rcarder/Documents/dev/CARES/data/Enhanced Datasets")
 write.csv(MasterDistrictsAnalysis,"CongressionalDistrictsEnhanced.csv",row.names = FALSE)
+write.csv(MasterCountiesAnalysis,"CountiesEnhanced.csv",row.names = FALSE)
+
+#write borders for maps
+setwd("C:/Users/rcarder/Documents/dev/CARES/data/geojson borders")
+
+CongressionalDistricts<-MasterDistricts%>%
+  dplyr::select(1,2,3,46,47,50,51)
+
+Counties<-MasterCounties%>%
+  dplyr::select(1,2,3,43,44)
+
+topojson_write(CongressionalDistricts,file="CongressionalDistricts.json")
+topojson_write(Counties,file="Counties.json")
 
 
 ##Write Shapefile
@@ -420,8 +527,8 @@ MasterDistricts%>%
   theme(legend.position = "right")
 
 ##options
-statefilter="Minnesota"
-cutoff=100
+statefilter="Michigan"
+cutoff=150
 
 statecities<-cities%>%
   filter(State==statefilter&Rank<=cutoff)
@@ -430,10 +537,10 @@ statecities<-cities%>%
 MasterDistricts%>%
   filter(state==statefilter)%>%
   ggplot() +
-  geom_sf(aes(fill=(MidPerCap)),color="#ffffff",alpha=1) +
-  scale_fill_distiller(palette="Blues",na.value="000000",limits=c(0, 8000),direction = 1,labels=currency)+
+  geom_sf(aes(fill=(percentileMid)),color="#ffffff",alpha=1) +
+  scale_fill_distiller(palette="PiYG",na.value="000000",limits=c(0, 100),direction = 1)+
   geom_point(data=statecities,aes(x=lon,y=lat),size=.5)+
-  labs(fill="Loan Amount Per Capita")+
+  labs(fill="Percentile - Loan")+
   geom_text_repel(data=statecities,aes(x=lon,y=lat,label=City),family="Montserrat",size=3)+
   theme_map()+
   theme(legend.position = "right")
@@ -617,7 +724,8 @@ ZipIndustryAmount<-adbs%>%
 
 
 
-
+anchorage<-adbs%>%
+  filter(Zip==99503)
 
 
 

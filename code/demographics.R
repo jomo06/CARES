@@ -16,7 +16,8 @@ library(geojsonio)
 #to where you want output files to save, or use the collect_acs_data function 
 #to set a different outpath.
 #
-
+setwd("C:/Users/rcarder/downloads")
+#adbs<-read.csv("ADBS 0808 Enhanced.csv")
 
 ##Change to your wd where repo is cloned to pull in any auxiliary data that may be useful
 setwd("C:/Users/rcarder/Documents/dev/CARES/data/Lookup Tables")
