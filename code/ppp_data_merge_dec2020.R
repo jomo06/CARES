@@ -28,7 +28,7 @@ adbs <- map_df(csv_files, ~read_csv(.x, col_types = cols(.default = "c")) %>%
 ### Clean -------------------------------------------------------------------
 
 # Create unified Loan Amount / Loan Range cuts
-# as of Dec 2020 data the Loan Range variable no longer exists, we will recreate it
+# as of Dec 2020 data the Loan Range variable no longer exists, we will create a unified version
 
 adbs <- adbs %>% 
   mutate(LoanRange_Unified = case_when(as.numeric(LoanAmount) > 5000000 & as.numeric(LoanAmount) <= 10000000 ~ "a $5 million - $10 million",
@@ -49,6 +49,9 @@ adbs <- adbs %>%
                                        as.numeric(LoanAmount) <       0                                      ~ "p      Less than Zero",
                                        TRUE ~ "Unknown"))
 
+# original LoanRange variable no longer exists, will create as 'not available' for easy merging
+adbs$LoanRange <- "Source Field No Longer Available as of Dec 2020"
+									   
 # Create Jobs Retained cuts
 
 adbs$JobsRetained <- "Source Field No Longer Available as of 0808"
